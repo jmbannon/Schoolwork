@@ -1,0 +1,261 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\Resources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\Menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\Ship.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\Rocks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\Resources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\AsteroidsApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Menu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Rocks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Ship.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\brandonplutoleft.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\brandonplutoright.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\enemy1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\escMenuOverlay.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\leftOverlay.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level10b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level11b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level1b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level2b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level3b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level4b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level5b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level6b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level7b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level8b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\level9b.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\life.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\pluto.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\rightOverlay.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock01.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock02.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock03.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock101.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock102.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock103.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock11.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock12.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock13.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock21.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock22.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock23.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock31.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock32.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock33.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock41.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock42.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock43.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock51.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock52.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock53.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock61.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock62.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock63.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock71.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock72.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock73.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock81.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock82.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock83.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock91.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock92.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Rock93.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\ship.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\shipforward.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\shipleft.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\shipneutral.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\shipright.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\shipshot.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\starfield.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\startMenuOverlay.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\wormhole.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\wormhole1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\wormhole2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\wormhole3.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\wormhole4.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\wormhole5.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\wormhole6.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\wormhole7.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1C6E02D2-45EC-4A35-963E-1A35CA092F82}</ProjectGuid>
+    <RootNamespace>CinderProject</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>Asteroids</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\include;C:\Users\Jesse\Desktop\Cinder\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\src;C:\Users\Jesse\Desktop\Cinder\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include;..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include;..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\boost;..\..\..\Workspace\CinderProject\irrKlang</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>"..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include";..\include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>cinder_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>"..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\lib";"..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\lib\msw"</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <TargetMachine>MachineX86</TargetMachine>
+      <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCPMT</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\include;"..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include";"..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\boost"</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;NOMINMAX;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>"..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include";..\include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>cinder.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>"..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\lib";"..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\lib\msw"</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding />
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\Menu.h" />
+    <ClInclude Include="..\include\Resources.h" />
+    <ClInclude Include="..\include\Rocks.h" />
+    <ClInclude Include="..\include\Ship.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\AsteroidsApp.cpp" />
+    <ClCompile Include="..\src\Menu.cpp" />
+    <ClCompile Include="..\src\Rocks.cpp" />
+    <ClCompile Include="..\src\Ship.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\brandonplutoleft.png" />
+    <Image Include="assets\brandonplutoright.png" />
+    <Image Include="assets\enemy1.png" />
+    <Image Include="assets\escMenuOverlay.png" />
+    <Image Include="assets\leftOverlay.png" />
+    <Image Include="assets\level10b.jpg" />
+    <Image Include="assets\level11b.jpg" />
+    <Image Include="assets\level1b.jpg" />
+    <Image Include="assets\level2b.jpg" />
+    <Image Include="assets\level3b.jpg" />
+    <Image Include="assets\level4b.jpg" />
+    <Image Include="assets\level5b.jpg" />
+    <Image Include="assets\level6b.jpg" />
+    <Image Include="assets\level7b.jpg" />
+    <Image Include="assets\level8b.jpg" />
+    <Image Include="assets\level9b.jpg" />
+    <Image Include="assets\life.png" />
+    <Image Include="assets\pluto.png" />
+    <Image Include="assets\rightOverlay.png" />
+    <Image Include="assets\Rock01.png" />
+    <Image Include="assets\Rock02.png" />
+    <Image Include="assets\Rock03.png" />
+    <Image Include="assets\Rock101.png" />
+    <Image Include="assets\Rock102.png" />
+    <Image Include="assets\Rock103.png" />
+    <Image Include="assets\Rock11.png" />
+    <Image Include="assets\Rock12.png" />
+    <Image Include="assets\Rock13.png" />
+    <Image Include="assets\Rock21.png" />
+    <Image Include="assets\Rock22.png" />
+    <Image Include="assets\Rock23.png" />
+    <Image Include="assets\Rock31.png" />
+    <Image Include="assets\Rock32.png" />
+    <Image Include="assets\Rock33.png" />
+    <Image Include="assets\Rock41.png" />
+    <Image Include="assets\Rock42.png" />
+    <Image Include="assets\Rock43.png" />
+    <Image Include="assets\Rock51.png" />
+    <Image Include="assets\Rock52.png" />
+    <Image Include="assets\Rock53.png" />
+    <Image Include="assets\Rock61.png" />
+    <Image Include="assets\Rock62.png" />
+    <Image Include="assets\Rock63.png" />
+    <Image Include="assets\Rock71.png" />
+    <Image Include="assets\Rock72.png" />
+    <Image Include="assets\Rock73.png" />
+    <Image Include="assets\Rock81.png" />
+    <Image Include="assets\Rock82.png" />
+    <Image Include="assets\Rock83.png" />
+    <Image Include="assets\Rock91.png" />
+    <Image Include="assets\Rock92.png" />
+    <Image Include="assets\Rock93.png" />
+    <Image Include="assets\ship.png" />
+    <Image Include="assets\shipforward.png" />
+    <Image Include="assets\shipleft.png" />
+    <Image Include="assets\shipneutral.png" />
+    <Image Include="assets\shipright.png" />
+    <Image Include="assets\shipshot.jpg" />
+    <Image Include="assets\starfield.jpg" />
+    <Image Include="assets\startMenuOverlay.png" />
+    <Image Include="assets\wormhole.png" />
+    <Image Include="assets\wormhole1.png" />
+    <Image Include="assets\wormhole2.png" />
+    <Image Include="assets\wormhole3.png" />
+    <Image Include="assets\wormhole4.png" />
+    <Image Include="assets\wormhole5.png" />
+    <Image Include="assets\wormhole6.png" />
+    <Image Include="assets\wormhole7.png" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

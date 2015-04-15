@@ -1,0 +1,14 @@
+Project 1a Summary:
+
+References: 
+        n/a
+
+Summary: 
+         The only problems I came across were multiplying both 
+         Matrix A and B when B was in row major. I figured it out
+		 by incrementing the values to multiply from Matrix B by
+		 the number of rows. The diagram on the paper I made explains
+		 it much better.
+		 
+Dynamic Report:
+         I give myself an A. 

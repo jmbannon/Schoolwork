@@ -1,0 +1,21 @@
+/*
+=============================================
+Author:	Jesse Bannon
+Date: 	February 8th, 2015
+Class:	TCSS 372 B: Computer Architecture
+Project: Matrix Multiplier Optimization
+Version: 2.0
+=============================================
+
+Sources:
+http://logos.cs.uic.edu/366/notes/mips%20quick%20tutorial.htm
+
+
+Challenges and issues:
+No big issues with Project 2. Converting matrix B to store values
+in column format took about 13 lines of code to change from Project #1.
+
+Dynamic Report:
+I worked by myself, I actually enjoy making math programs!
+
+*/

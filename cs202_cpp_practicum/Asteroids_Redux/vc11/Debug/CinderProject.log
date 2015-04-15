@@ -1,0 +1,19 @@
+﻿Build started 12/7/2014 9:56:49 AM.
+     1>Project "C:\Users\Jesse\Documents\Repository\C++\Asteroids_Redux\vc11\CinderProject.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I..\include /IC:\Users\Jesse\Desktop\Cinder\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\src /IC:\Users\Jesse\Desktop\Cinder\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include /I..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include /I..\..\..\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\boost /I..\..\..\Workspace\CinderProject\irrKlang /ZI /nologo /W3 /WX- /MP /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D NOMINMAX /D _WIN32_WINNT=0x0502 /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\AsteroidsApp.cpp ..\src\Menu.cpp ..\src\Rocks.cpp ..\src\Ship.cpp
+     1>cl : Command line warning D9030: '/Gm' is incompatible with multiprocessing; ignoring /MP switch
+         Ship.cpp
+     1>c:\users\jesse\desktop\cinder\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include\cinder\cinder.h(26): fatal error C1083: Cannot open include file: 'boost/version.hpp': No such file or directory
+         Rocks.cpp
+     1>c:\users\jesse\desktop\cinder\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include\cinder\cinder.h(26): fatal error C1083: Cannot open include file: 'boost/version.hpp': No such file or directory
+         Menu.cpp
+     1>c:\users\jesse\desktop\cinder\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include\cinder\cinder.h(26): fatal error C1083: Cannot open include file: 'boost/version.hpp': No such file or directory
+         AsteroidsApp.cpp
+     1>c:\users\jesse\desktop\cinder\cinder_0.8.5_vc2012\cinder_0.8.5_vc2012\include\cinder\cinder.h(26): fatal error C1083: Cannot open include file: 'boost/version.hpp': No such file or directory
+         Generating Code...
+     1>Done Building Project "C:\Users\Jesse\Documents\Repository\C++\Asteroids_Redux\vc11\CinderProject.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:03.90
