@@ -1,38 +1,34 @@
+/*
+ * Author:      Jesse Bannon
+ * Class:       TCSS 342B; Data Structures
+ * Desc:        Mutates a string start with 'A' to its target string
+ *              using artificial evolution.
+ */
 
-import java.util.Arrays;
 import java.util.Random;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/**
- *
- * @author jbannon
- */
 public class Genome {
     public final String target = "JESSE MICHAEL BANNON";
     protected String gene;
     protected double mutationRate;
     private Random rand;
     
-    public Genome(double mutationRate) {
+    public Genome(double mutationRate) 
+    {
 	this.gene = "A";
 	this.mutationRate = mutationRate;
 	this.rand = new Random();
     }
     
-    public Genome(Genome gene) {
+    public Genome(Genome gene) 
+    {
 	this.gene = gene.gene;
 	this.mutationRate = gene.mutationRate;
 	this.rand = new Random();
     }
     
-    public void mutate() {
-	final int len = this.gene.length();
-	
+    public void mutate() 
+    {
 	if (isMutation())
 	    addChar();
 	
@@ -40,22 +36,20 @@ public class Genome {
 	    delChar();
 	
 	char temp[] = this.gene.toCharArray();
-	for (char c : temp)
+        for (int i = 0; i < temp.length; i++)
 	{
 	    if (isMutation())
-	    {
-		c = randChar();
-	    }
+		temp[i] = randChar();
 	}
-	
 	this.gene = new String(temp);
-	//System.out.println("mutate: " + this.gene);
     }
     
-    public void crossover(Genome other) {
+    public void crossover(Genome other) 
+    {
 	final int lessLen, greatLen;
 	final boolean otherIsGreater;
-	
+	final StringBuilder temp = new StringBuilder();
+        
 	if (this.gene.length() > other.gene.length())
 	{
 	    greatLen = this.gene.length();
@@ -67,14 +61,11 @@ public class Genome {
 	    greatLen = other.gene.length();
 	    lessLen = this.gene.length();
 	    otherIsGreater = true;
-	}
-	
-	StringBuilder temp = new StringBuilder();
+	}	
 
 	int i = 0;
 	while (i < lessLen) 
 	{
-	    //System.out.println(lessLen + "gene size = " + gene.length() + " other len = " + other.gene.length());
 	    if (this.rand.nextBoolean())
 		temp.append(this.gene.charAt(i++));
 	    else
@@ -93,17 +84,18 @@ public class Genome {
 	    else
 		break;
 	}
-	
 	this.gene = temp.toString();
     }
     
-    int fitness() {
+    int fitness() 
+    {
 	final int geneLen = this.gene.length();
 	final int targetLen = this.target.length();
 	
 	final boolean targetIsGreater = (targetLen > geneLen);	
 	final int lessLen = targetIsGreater ? geneLen : targetLen;
-	
+	final int greatLen = targetIsGreater ? targetLen : geneLen;
+        
 	int fitness = Math.abs(targetLen - geneLen);
 	
 	int i = 0;
@@ -112,11 +104,12 @@ public class Genome {
 	    if (this.gene.charAt(i) != this.target.charAt(i))
 		++fitness;
 	    ++i;
-	}
-	return fitness;
+	}    
+        return fitness += (greatLen - i);
     }
     
-    public boolean isMutation() {
+    public boolean isMutation() 
+    {
 	final double max = mutationRate * 100000;
 	final int determinant = this.rand.nextInt(100000);
 	

@@ -1,39 +1,35 @@
+/*
+ * Author:      Jesse Bannon
+ * Class:       TCSS 342B; Data Structures
+ * Desc:        Mutates a string start with 'A' to its target string
+ *              using artificial evolution.
+ */
 
 import java.util.ArrayList;
 import java.util.Random;
 
-
-
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/**
- *
- * @author jbannon
- */
-public class Population {
+public class Population 
+{
     public Genome mostFit;
     private ArrayList<Genome> population;
-    private Random rand;
-    private final double mutationRate;
+    private final Random rand;
+    private final String target;
     
     public Population(int numGenomes, 
 	              double mutationRate) 
     {
 	this.population = new ArrayList<>();
 	this.rand = new Random();
-	this.mutationRate = mutationRate;
 	
 	for (int i = 0; i < numGenomes; i++)
 	    this.population.add(new Genome(mutationRate));
 	
 	this.mostFit = this.population.get(0);
+        this.target = this.population.get(0).target;
     }
     
-    void day() {
+    void day() 
+    {
 	final int popSize = population.size();
 	population = quickSort(population);
 	mostFit = population.get(0);
@@ -52,7 +48,8 @@ public class Population {
 	}
     }
     
-    ArrayList<Genome> quickSort(ArrayList<Genome> theList) {
+    ArrayList<Genome> quickSort(ArrayList<Genome> theList) 
+    {
 	final int len = theList.size();
 
 	if (len == 0)
@@ -87,12 +84,11 @@ public class Population {
 	for (Genome right1 : right)
 	    toReturn.add(right1);
 	
-	//System.out.println(toReturn.get(0).fitness());
-	
 	return toReturn;
     }
     
-    public boolean isTarget() {
+    public boolean isTarget() 
+    {
 	return mostFit.fitness() == 0;
     }
     
