@@ -12,7 +12,7 @@ public class Main {
     
     public static void main(String[] args) {
 	//testGenome();
-	Population temp = new Population(100, 0.5);
+	Population temp = new Population(100, 0.05);
 	int i = 0;
 	
 	while(!temp.isTarget()) {
