@@ -7,11 +7,12 @@
 
 import java.util.Random;
 
-public class Genome {
+public class Genome 
+{
     public final String target = "JESSE MICHAEL BANNON";
     protected String gene;
     protected double mutationRate;
-    private Random rand;
+    private final Random rand;
     
     public Genome(double mutationRate) 
     {
