@@ -6,5 +6,7 @@ int main(void)
 {
 
     Compress("WarAndPeace.txt", "nope");
+    printf("Compressed\n");
+    Decompress("nope", "test.txt");
     return 0;
 }
