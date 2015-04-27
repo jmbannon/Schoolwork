@@ -9,19 +9,19 @@ public class Main
 {
     public static void main(String[] args) 
     {    
-	final Population pop = new Population(100, 0.05);
-	int i = 0;
+        final Population pop = new Population(100, 0.05);
+        int i = 0;
         
         final long startTime = System.currentTimeMillis();
-	while(!pop.isTarget()) 
+        while(!pop.isTarget()) 
         {
-	    System.out.println("\"" 
+            System.out.println("\"" 
                     + pop.mostFit.gene 
                     + "\" " 
                     + pop.mostFit.fitness());
-	    pop.day();
-	    ++i;
-	}
+            pop.day();
+            ++i;
+        }
         final long endTime = System.currentTimeMillis();
         
         System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
@@ -32,21 +32,27 @@ public class Main
     
     public static void testGenome()
     {
-	Genome test = new Genome(0.05);
-	test.gene = "JESSE";
-	test.addChar();
-	test.delChar();
-	System.out.println(test.isMutation());
-	System.out.println(test.gene);
+        Genome test = new Genome(0.05);
+        test.gene = "JESSE";
+        test.addChar();
+        test.delChar();
+        System.out.println(test.isMutation());
+        System.out.println(test.gene);
         
-	Genome test2 = new Genome(0.05);
-	test2.gene = "JESSE MICHAEL BANNON";
+        Genome test2 = new Genome(0.05);
+        test2.gene = "JESSE MICHAEL BANNON";
 	
-	System.out.println(test2.fitness());
+        System.out.println(test2.fitness());
     }
     
     public void testPopulation()
     {
-	
+	    Population test = new Population(100, 0.05);
+        
+        for (int i = 0; i < 50; i++)
+        {
+            test.day();
+            System.out.println(test.mostFit.gene);
+        }
     }
 }
