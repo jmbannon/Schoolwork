@@ -7,11 +7,11 @@
 #include "util.h"
 
 typedef enum _days {
-    MON, TUE, WED, THU, FRI
+    MON, TUE, WED, THU, FRI, DNE
 } day;
 
 typedef struct _time_scheule {
-    pthread_mutex_t locks[5];
+    pthread_spinlock_t locks[5];
     char ** days[5];
     unsigned int idx[5];
     const char * building, * room;
@@ -65,8 +65,85 @@ void initialize_schedule(time_schedule ** schedule,
     for (i = 0; i < 5; i++) {
         (*schedule)->idx[i] = 0;
         (*schedule)->days[i] = malloc(12 * sizeof(char *));
-        pthread_mutex_init(&(*schedule)->locks[i], NULL);
+        pthread_spin_init(&(*schedule)->locks[i], 0);
     }   
+}
+
+unsigned int get_start_time(char * time) 
+{
+    unsigned int hour, minute, digits = 0, len = strlen(time);
+    if (len < 7) {
+        printf("[ERROR] Invalid time for get_start_time\n");
+        return 0;
+    }
+
+    while (time[digits] != '-') ++digits;
+    if (digits == 3) {
+        hour = (time[0] - '0');
+        minute = (10*(time[1] - '0') + (time[2] - '0'));
+    } else if (digits == 4) {
+        hour = (10 + (time[1] - '0'));
+        minute = (10*(time[2] - '0') + (time[3] - '0'));
+    }
+    if (hour < 6)
+        hour += 12;
+    while (digits < 10) {
+        if (time[digits++] == 'P')
+            hour += 12;
+    }
+    return (hour * 60) + minute;    
+}
+
+void sort_day(char ** times,
+             unsigned int size) 
+{
+    unsigned int i, j;
+    char * temp;
+
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size-1; j++) {
+            if (get_start_time(times[j]) > get_start_time(times[j+1])) {
+                temp = times[j];
+                times[j] = times[j+1];
+                times[j+1] = temp;
+            }
+        }
+    }
+}
+
+void sort_schedule(time_schedule * schedule) {
+    int i;
+    for (i = 0; i < 5; i++)
+        sort_day(schedule->days[i], schedule->idx[i]);
+}
+
+void print_day(char ** day_sched,
+               unsigned int size,
+               day d)
+{
+    int i;
+    char * abbr;
+    switch(d) {
+    case MON: abbr = "M"; break;
+    case TUE: abbr = "T"; break;
+    case WED: abbr = "W"; break;
+    case THU: abbr = "Th"; break;
+    case FRI: abbr = "F"; break;
+    default: perror("Invalid Day"); return;
+    }
+    if (size)
+        printf("%d  %s\n", d, day_sched[0]);
+    for (i = 1; i < size; i++)
+        printf("   %s\n", day_sched[i]);
+}
+
+void print_schedule(time_schedule * schedule) {
+    int i;
+    for (i = 0; i < 5; i++) {
+        print_day(schedule->days[i],
+                  schedule->idx[i],
+                  i);
+    }
 }
 
 void add_class(time_schedule * schedule,
@@ -77,14 +154,31 @@ void add_class(time_schedule * schedule,
                unsigned int times_len,
                day d) 
 {
-    //char * class = malloc(24 * sizeof(char));
-    printf("%.*s %.*s\n", times_len, 
-                          webpage+times_idx, 
-                          class_len, 
-                          webpage+class_idx);
-    //pthread_mutex_lock(&schedule->locks[d]);
-}
-               
+    char * class;
+    unsigned int i, * idx;
+
+    if (d >= DNE) {
+        printf("[ERROR] Invalid day\n");
+        return;
+    }
+
+    class = malloc(24 * sizeof(char));
+    sprintf(class, "%-12.*s %.*s", times_len,
+                                   webpage+times_idx,
+                                   class_len,
+                                   webpage+class_idx);
+
+    for (i = 0; i < schedule->idx[d]; i++) {
+        if (strcmp(class, schedule->days[d][i]) == 0)
+            return;
+    }
+    //printf("class : %s day = %d\n", class, d);
+    pthread_spin_lock(&schedule->locks[d]);
+    idx = &schedule->idx[d];
+    schedule->days[d][(*idx)++] = class;
+    //printf("[%d][%d] %s\n", d, *idx-1, class);
+    pthread_spin_unlock(&schedule->locks[d]);
+}              
 
 void parse_page(const char * building,
                 const char * room,
@@ -136,7 +230,9 @@ void parse_page(const char * building,
                     else if (strcmpin(walker+i, "W", 1) == 0) temp_day = WED;
                     else if (strcmpin(walker+i, "T", 1) == 0) temp_day = TUE;
                     else if (strcmpin(walker+i, "M", 1) == 0) temp_day = MON;
-                    else temp_day = -1;
+                    else temp_day = DNE;
+                    
+                    if (temp_day != DNE)
                     add_class(schedule, 
                               classpage, 
                               n_idx,
@@ -259,6 +355,9 @@ void inspect_classroom(const char * building,
 
     for (idx = 0; idx < analysis_threads; idx++)
         pthread_join(r_threads[idx], NULL);
+
+    sort_schedule(schedule);
+    print_schedule(schedule);
 //*/
 
 }
