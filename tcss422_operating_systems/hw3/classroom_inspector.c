@@ -6,8 +6,13 @@
 #include "classroom_inspector.h"
 #include "util.h"
 
+typedef enum _days {
+    MON, TUE, WED, THU, FRI
+} day;
+
 typedef struct _time_scheule {
-    char ** m, ** t, ** w, ** th, ** f;
+    pthread_mutex_t locks[5];
+    char ** days[5];
     unsigned int idx[5];
     const char * building, * room;
 } time_schedule;
@@ -53,17 +58,103 @@ void initialize_schedule(time_schedule ** schedule,
                          const char * building,
                          const char * room) 
 {
-    (*schedule) = malloc(sizeof(time_schedule));
-    (*schedule)->m = malloc(8 * sizeof(char *));
-    (*schedule)->t = malloc(8 * sizeof(char *));
-    (*schedule)->w = malloc(8 * sizeof(char *));
-    (*schedule)->th = malloc(8 * sizeof(char *));
-    (*schedule)->f = malloc(8 * sizeof(char *));
+    (*schedule) = malloc(sizeof(time_schedule)); 
     (*schedule)->building = building;
     (*schedule)->room = room;
     int i;
-    for (i = 0; i < 5; i++)
-        (*schedule)->idx[i] = 0;    
+    for (i = 0; i < 5; i++) {
+        (*schedule)->idx[i] = 0;
+        (*schedule)->days[i] = malloc(12 * sizeof(char *));
+        pthread_mutex_init(&(*schedule)->locks[i], NULL);
+    }   
+}
+
+void add_class(time_schedule * schedule,
+               char * webpage,
+               unsigned int class_idx,
+               unsigned int times_idx,
+               unsigned int class_len,
+               unsigned int times_len,
+               day d) 
+{
+    //char * class = malloc(24 * sizeof(char));
+    printf("%.*s %.*s\n", times_len, 
+                          webpage+times_idx, 
+                          class_len, 
+                          webpage+class_idx);
+    //pthread_mutex_lock(&schedule->locks[d]);
+}
+               
+
+void parse_page(const char * building,
+                const char * room,
+                char * classpage,
+                time_schedule * schedule)
+{
+    unsigned int i, p_len, b_len, r_len, t_len, n_len, d_len;
+    unsigned int t_idx, n_idx, d_idx;
+    char * walker;
+    day temp_day;
+    p_len = strlen(classpage);
+    b_len = strlen(building);
+    r_len = strlen(room);
+    t_len = 0;
+
+    walker = classpage;
+    for (i = 0; i < p_len; i++) {
+        if (strncmp(walker+i, "A NAME=", 7) == 0) {
+             i += 7;
+             n_idx = i;
+             n_len = 0;
+             while(walker[i++] != '>') ++n_len;
+        }
+        if (strncmp(walker+i, building, b_len) == 0) {
+            t_len = 0;
+            i += b_len;
+            t_len += b_len;
+            while(walker[i] == ' ' || walker[i] == '\t'){++i;  ++t_len;}
+            if (strncmp(walker+i, room, r_len) == 0) {
+                i -= (t_len + 1);
+                t_len = 0;
+                d_len = 0;
+                while(walker[i - 1] == ' ') --i;
+                while(walker[i - 1] != ' ') {
+                    ++t_len;
+                    --i;
+                }
+                t_idx = i;
+                while(walker[i - 1] == ' ') --i;
+                while(walker[i - 1] != ' ') {
+                    ++d_len;
+                    --i;
+                }
+                //printf("%.5s-len=%d\n", walker+i, d_len);
+                d_idx = i;
+                while (i < (d_idx+d_len)) {
+                    if (strcmpin(walker+i, "F", 1) == 0) temp_day = FRI;
+                    else if (strcmpin(walker+i, "Th", 2) == 0) temp_day = THU;
+                    else if (strcmpin(walker+i, "W", 1) == 0) temp_day = WED;
+                    else if (strcmpin(walker+i, "T", 1) == 0) temp_day = TUE;
+                    else if (strcmpin(walker+i, "M", 1) == 0) temp_day = MON;
+                    else temp_day = -1;
+                    add_class(schedule, 
+                              classpage, 
+                              n_idx,
+                              t_idx,
+                              n_len,
+                              t_len,
+                              temp_day);
+                    ++i;
+                }
+               // while (i < i+d_len) {
+                    //if (strcmpin(walker+i, "M", 1) == 0) printf("shit is on mon\n");
+               //     ++i;
+               // }
+                //printf("%-12.*s%.*s\n", t_len, walker+i, n_len, walker+n_idx);
+                i += (d_len + t_len + b_len + r_len + 50);
+            }
+        }
+    } //printf("%s\n", classpage);
 }
 
 void * inspect_page(void * params)
@@ -72,7 +163,11 @@ void * inspect_page(void * params)
     int i;
     //printf("bounds: %d to %d\n", r_info->bounds[0], r_info->bounds[1]);
     for (i = r_info->bounds[0]; i < r_info->bounds[1]; i++) {
-     
+        parse_page(r_info->times->building,
+                   r_info->times->room,
+                   r_info->html_pages[i],
+                   r_info->times);
+        //printf("page %d\n", i);
     }   
 }
 
