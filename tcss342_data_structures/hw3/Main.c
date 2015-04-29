@@ -5,11 +5,14 @@
 #define BOOL unsigned char
 
 void printUsage() {
-    printf("* COMPRESSOR USAGE\n"
-           "*\n"
-           "* %-12.[-c] [txt_name] [bin_output] %.Compresses text file to binary file\n"
-           "* %-12.[-d] [bin_name] [txt_output] %.Decompresses binary file to text file\n"
-           "*\n");
+    printf("*\n*\n");
+    printf("* COMPRESSOR USAGE\n");
+    printf("*\n");
+    printf("* [-c] [txt_name] [bin_output]");
+    printf(" Compresses text file to binary file\n");
+    printf("* [-d] [bin_name] [txt_output]");
+    printf(" Decompresses binary file to text file\n");
+    printf("*\n*\n");
 }
 
 int main(int argc, char *argv[])
