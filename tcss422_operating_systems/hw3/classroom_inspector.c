@@ -66,15 +66,15 @@ typedef struct _parse_info {
  * Doubles char pointer array allocation. Used for increasing class     *
  * string pointers.                                                     *
  * ==================================================================== */
-int increaseAllocation(char ** array,
-                        int * size)
+unsigned int increaseAllocation(char ** array,
+                                unsigned int * size)
 {
-    int newsize = *size * 2;
+    unsigned int newsize = *size * 2;
     char ** newArray;
     newArray = realloc(array, newsize*sizeof(char*));
     if (newArray == NULL) {
         printf("Memory reallocation failed\n");
-        return -1;
+        return 0;
     }
     *size = newsize;
     array = newArray;
@@ -366,6 +366,50 @@ void * retrieve_page(void * params)
     }
 }
 
+
+unsigned int getURLS(const char * building,
+            const char * room,
+            const char * time_schedule_url,
+            char * ** webpageURLs)
+{
+    unsigned int len, idx, link_idx, webpage_count, url_len, url_size;
+    char *webpage;
+
+    if ((webpage = getContent(time_schedule_url)) == NULL)
+        printf("error here\n");
+
+    url_size = 64;
+    url_len = strlen(time_schedule_url);
+    *webpageURLs = malloc(url_size * sizeof(char*));
+    len = strlen(webpage);
+
+    webpage_count = 0;
+
+    for (idx = 0; idx < len; idx++) {
+        if (strcmpin(webpage+idx, "<li><a href=", 12) == 0) {
+            if (webpage_count == url_size) {
+                printf("increaseed! Test this!!!");
+                increaseAllocation(*webpageURLs, &url_size);
+            }
+
+            idx += 12;
+            link_idx = url_len;
+
+            char * tempLink = malloc((url_len + 12) * sizeof(char));
+            strcpy(tempLink, time_schedule_url);
+          
+            while (webpage[idx] != '>')
+                tempLink[link_idx++] = webpage[idx++];
+
+            tempLink[link_idx] = '\0';
+            (*webpageURLs)[webpage_count++] = tempLink;
+        }
+    }
+    return webpage_count;
+}
+
+
+
 /* ==================================================================== *
  * inspect_classroom:                                                   *
  * Searches the entire UW Tacoma class listing for classes within the   *
@@ -377,55 +421,24 @@ void inspect_classroom(const char * building,
                        int retrieval_threads, 
                        int analysis_threads) 
 {
-    char buffer[80], * content, * walker, ** webpages, ** webpageURLs;
-    unsigned int len, idx, link_idx, k, webpage_size;
+    char * content, * walker, ** webpages, ** webpageURLs;
+    unsigned int len, idx, link_idx, k, webpage_size, url_size;
+    time_schedule * schedule;
+
     idx = (retrieval_threads > analysis_threads)
                 ? retrieval_threads : analysis_threads;
     pthread_t r_threads[idx];
     parse_info r_info[idx];
-    time_schedule * schedule;
-
-    webpage_size = 64;
-    webpageURLs = malloc((webpage_size + 1) * sizeof(char*));
-
-    if (getMIMEType(time_schedule_url, buffer, 80))
-        printf("%s\n\n", buffer);
-    if ((content = getContent(time_schedule_url)) == NULL)
-        printf("error here\n");
-
-    len = strlen(content);
-    walker = content;
-    k = 0;
-    for (idx = 0; idx < len; idx++) {
-        if (strcmpin(walker+idx, "<li><a href=", 12) == 0) {
-            if (k == webpage_size) {
-                printf("increase! %d %d\n", k, webpage_size);
-                increaseAllocation(webpageURLs, &webpage_size);
-            }
-
-            idx += 12;
-            link_idx = strlen(time_schedule_url);
-
-            char * tempLink = malloc((link_idx + 12) * sizeof(char));
-
-            strcpy(tempLink, time_schedule_url);
-          
-            while (walker[idx] != '>')
-                tempLink[link_idx++] = walker[idx++];
-            tempLink[link_idx] = '\0';
-
-            webpageURLs[k++] = tempLink;
-        }
-    }
- 
-    webpages = malloc(k * sizeof(char *));
+    
+    url_size = getURLS(building, room, time_schedule_url, &webpageURLs);
+    webpages = malloc(url_size * sizeof(char *));
     initialize_schedule(&schedule, building, room);
 
     for (idx = 0; idx < retrieval_threads; idx++) {
         r_info[idx].URLs = webpageURLs;
         r_info[idx].html_pages = webpages;
-        r_info[idx].bounds[0] = ((k/retrieval_threads)*idx);
-        r_info[idx].bounds[1] = ((k/retrieval_threads)*(idx+1));
+        r_info[idx].bounds[0] = ((url_size/retrieval_threads)*idx);
+        r_info[idx].bounds[1] = ((url_size/retrieval_threads)*(idx+1));
         pthread_create(&r_threads[idx], NULL, &retrieve_page, &r_info[idx]);
     }
 
@@ -435,8 +448,8 @@ void inspect_classroom(const char * building,
     for (idx = 0; idx < analysis_threads; idx++) {
         r_info[idx].URLs = webpageURLs;
         r_info[idx].html_pages = webpages;
-        r_info[idx].bounds[0] = ((k/analysis_threads)*idx);
-        r_info[idx].bounds[1] = ((k/analysis_threads)*(idx+1));
+        r_info[idx].bounds[0] = ((url_size/analysis_threads)*idx);
+        r_info[idx].bounds[1] = ((url_size/analysis_threads)*(idx+1));
         r_info[idx].times = schedule;
         pthread_create(&r_threads[idx], NULL, &inspect_page, &r_info[idx]);
     }
