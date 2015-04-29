@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "HuffmanTree.h"
 #define BOOL unsigned char
 
@@ -15,9 +16,32 @@ void printUsage() {
     printf("*\n*\n");
 }
 
+double getRatio(int x, int y) {
+    return (double)x/(double)y;
+}
+
+void printStatistics(statistics stats,
+                     BOOL compress) 
+{
+    printf("*\n");
+    if (compress) printf("* COMPRESSION METRICS\n");
+    else          printf("* DECOMPRESSION METRICS\n");
+    printf("*\n");
+    printf("* %-15s size: %d bits\n", stats.inputname, stats.input_size);
+    printf("* %-15s size: %d bits\n", stats.outputname, stats.output_size);
+    printf("*\n");
+    if (compress) printf("* Compression ratio: %.4f\n", 
+                      getRatio(stats.output_size, stats.input_size));
+    else          printf("* Decompression ratio: %.4f\n",
+                      getRatio(stats.output_size, stats.input_size));
+    printf("* Runtime: %d ms\n", stats.runtime);
+    printf("*\n"); 
+}
+
 int main(int argc, char *argv[])
 {
     BOOL compress;
+    statistics stats;
 
     if (argc < 4) {
         printUsage();
@@ -32,11 +56,13 @@ int main(int argc, char *argv[])
         printUsage();
         return EXIT_SUCCESS;
     }
-      
+   
     if (compress)
-        Compress(argv[2], argv[3]);
+        stats = Compress(argv[2], argv[3]);
     else
-        Decompress(argv[2], argv[3]);
+        stats = Decompress(argv[2], argv[3]);
+
+    printStatistics(stats, compress);
 
     return EXIT_SUCCESS;
 }

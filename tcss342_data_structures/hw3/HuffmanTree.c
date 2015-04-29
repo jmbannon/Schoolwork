@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 #include "HuffmanTree.h"
 
 /*
@@ -50,14 +51,9 @@ typedef struct __table_n_ {
  ====================================================================
  =  Function Prototypes  ============================================
  ====================================================================
-*/
+*
 
-/* User Functions */
-int Compress(const char * filename, 
-             const char * outputname);
-
-int Decompress(const char * filename,
-               const char * outputname);
+* User Functions found in header. */
 
 /* Encode (Compress) Functions */
 int Encode(FILE *in, 
@@ -113,16 +109,48 @@ void traverseTree(t_node** table,
  *  Compresses the specified text file and writes it to the             *
  *  specified output name.                                              *
  * ==================================================================== */
-int Compress(const char * filename, 
-             const char * outputname) 
+int file_length(FILE *f)
+{
+    int pos;
+    int end;
+
+    pos = ftell(f);
+    fseek(f, 0, SEEK_END);
+    end = ftell(f);
+    fseek(f, pos, SEEK_SET);
+    return end;
+}
+
+long timediff(clock_t t1, 
+              clock_t t2)
+{
+    return ((double)t2-t1) / CLOCKS_PER_SEC * 1000;
+}
+
+statistics Compress(const char * filename, 
+                    const char * outputname) 
 {
     FILE * in;
     FILE * out;
+    clock_t t1, t2;
+    statistics stats;
+
     in = fopen(filename, "r");
     out = fopen(outputname, "w");
+
+    t1 = clock();
     Encode(in, out);
+    t2 = clock();
+   
+    stats.inputname = filename;
+    stats.outputname = outputname;
+    stats.input_size = file_length(in);
+    stats.output_size = file_length(out);
+    stats.runtime = timediff(t1, t2);
+
     fclose(in);
     fclose(out);
+    return stats;
 }
 
 /* ==================================================================== *
@@ -130,16 +158,30 @@ int Compress(const char * filename,
  *  Decompresses the specified binary file and writes it to the         *
  *  specified output name.                                              *
  * ==================================================================== */
-int Decompress(const char * filename,
-               const char * outputname) 
+statistics Decompress(const char * filename,
+                      const char * outputname) 
 {
     FILE * in;
     FILE * out;
+    time_t t1, t2;
+    statistics stats;
+
     in = fopen(filename, "rb");
     out = fopen(outputname, "w");
+
+    t1 = clock();
     Decode(in, out);
+    t2 = clock();
+
+    stats.inputname = filename;
+    stats.outputname = outputname;
+    stats.input_size = file_length(in);
+    stats.output_size = file_length(out);
+    stats.runtime = timediff(t1, t2);
     fclose(in);
     fclose(out);
+
+    return stats;
 }
 
 /* ==================================================================== *
