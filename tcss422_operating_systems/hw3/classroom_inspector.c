@@ -1,3 +1,17 @@
+/*
+====================================================================
+* 
+* Author:      Jesse Bannon
+* Date:        04/25/15
+* Class:       TCSS 342: Data Structures
+* School:      University of Washington Tacoma
+* Desc:        Parses UW Tacoma class pages and displays all classes
+*              in a particular classroom.
+* Copyright:   Use for educational purposes only.
+* 
+====================================================================
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +19,12 @@
 #include <pthread.h>
 #include "classroom_inspector.h"
 #include "util.h"
+
+/*
+====================================================================
+= Structures and Enums  ============================================
+====================================================================
+*/
 
 typedef enum _days {
     MON, TUE, WED, THU, FRI, DNE
@@ -23,7 +43,29 @@ typedef struct _parse_info {
     time_schedule * times;
 } parse_info;
 
+/*
+====================================================================
+= Function Prototypes ==============================================
+====================================================================
+*/
 
+//WIP
+
+
+
+
+/*
+====================================================================
+= Functions ========================================================
+====================================================================
+*/
+
+
+/* ==================================================================== *
+ * increaseAllocation:                                                  *
+ * Doubles char pointer array allocation. Used for increasing class     *
+ * string pointers.                                                     *
+ * ==================================================================== */
 int increaseAllocation(char ** array,
                         int * size)
 {
@@ -39,6 +81,10 @@ int increaseAllocation(char ** array,
     return 1;
 }
 
+/* ==================================================================== *
+ * strcmpin:                                                            *
+ * Compares strings of length n, case insensitive.                      *
+ * ==================================================================== */
 int strcmpin(char * str1,
              const char * str2,
              const size_t n)
@@ -54,6 +100,11 @@ int strcmpin(char * str1,
     return 0;
 }
 
+/* ==================================================================== *
+ * initialize_schedule:                                                 *
+ * Initializes a schedule pointer. Allocates 12 pointers to a single    *
+ * day.                                                                 *
+ * ==================================================================== */
 void initialize_schedule(time_schedule ** schedule,
                          const char * building,
                          const char * room) 
@@ -69,6 +120,10 @@ void initialize_schedule(time_schedule ** schedule,
     }   
 }
 
+/* ==================================================================== *
+ * get_start_time:                                                      *
+ * Returns military time value of a start time within a class string.   *
+ * ==================================================================== */
 unsigned int get_start_time(char * time) 
 {
     unsigned int hour, minute, digits = 0, len = strlen(time);
@@ -94,29 +149,45 @@ unsigned int get_start_time(char * time)
     return (hour * 60) + minute;    
 }
 
+/* ==================================================================== *
+ * sort_day:                                                            *
+ * Sorts a day's char array by start time.                              *
+ * ==================================================================== */
 void sort_day(char ** times,
              unsigned int size) 
 {
     unsigned int i, j;
-    char * temp;
+    char * temp, swap;
 
     for (i = 0; i < size; i++) {
+        swap = 0;
         for (j = 0; j < size-1; j++) {
             if (get_start_time(times[j]) > get_start_time(times[j+1])) {
                 temp = times[j];
                 times[j] = times[j+1];
                 times[j+1] = temp;
+                swap = 1;
             }
         }
+        if (!swap)
+            return;
     }
 }
 
+/* ==================================================================== *
+ * sort_schedule:                                                       *
+ * Sorts the entire week schedule by start time of the class.           *
+ * ==================================================================== */
 void sort_schedule(time_schedule * schedule) {
     int i;
     for (i = 0; i < 5; i++)
         sort_day(schedule->days[i], schedule->idx[i]);
 }
 
+/* ==================================================================== *
+ * print_day:                                                           *
+ * Prints a particular day's schedule.                                  *
+ * ==================================================================== */
 void print_day(char ** day_sched,
                unsigned int size,
                day d)
@@ -137,6 +208,10 @@ void print_day(char ** day_sched,
         printf("   %s\n", day_sched[i]);
 }
 
+/* ==================================================================== *
+ * print_schedule:                                                      *
+ * Prints the entire classroom schedule for the week.                   *
+ * ==================================================================== */
 void print_schedule(time_schedule * schedule) {
     int i;
     for (i = 0; i < 5; i++) {
@@ -146,6 +221,10 @@ void print_schedule(time_schedule * schedule) {
     }
 }
 
+/* ==================================================================== *
+ * add_class:                                                           *
+ * Adds a class from the webpage into the time_schedule.                *
+ * ==================================================================== */
 void add_class(time_schedule * schedule,
                char * webpage,
                unsigned int class_idx,
@@ -172,14 +251,20 @@ void add_class(time_schedule * schedule,
         if (strcmp(class, schedule->days[d][i]) == 0)
             return;
     }
-    //printf("class : %s day = %d\n", class, d);
+
+    /* Critical Section */
     pthread_spin_lock(&schedule->locks[d]);
     idx = &schedule->idx[d];
     schedule->days[d][(*idx)++] = class;
-    //printf("[%d][%d] %s\n", d, *idx-1, class);
     pthread_spin_unlock(&schedule->locks[d]);
+    /* End of Critical Section */
 }              
 
+/* ==================================================================== *
+ * parse_page:                                                          *
+ * Parses a major's class list and adds any times for the particular    *
+ * building and room to the time_schedule.                              *
+ * ==================================================================== */
 void parse_page(const char * building,
                 const char * room,
                 char * classpage,
@@ -222,7 +307,7 @@ void parse_page(const char * building,
                     ++d_len;
                     --i;
                 }
-                //printf("%.5s-len=%d\n", walker+i, d_len);
+
                 d_idx = i;
                 while (i < (d_idx+d_len)) {
                     if (strcmpin(walker+i, "F", 1) == 0) temp_day = FRI;
@@ -242,49 +327,57 @@ void parse_page(const char * building,
                               temp_day);
                     ++i;
                 }
-               // while (i < i+d_len) {
-                    //if (strcmpin(walker+i, "M", 1) == 0) printf("shit is on mon\n");
-               //     ++i;
-               // }
-                //printf("%-12.*s%.*s\n", t_len, walker+i, n_len, walker+n_idx);
                 i += (d_len + t_len + b_len + r_len + 50);
             }
         }
-    } //printf("%s\n", classpage);
+    }
 }
 
+/* ==================================================================== *
+ * inspect_page:                                                        *
+ * Threaded function to parse a set of class pages. Input parse_info    *
+ * struct.                                                              *
+ * ==================================================================== */
 void * inspect_page(void * params)
 {
     parse_info* r_info = params;
     int i;
-    //printf("bounds: %d to %d\n", r_info->bounds[0], r_info->bounds[1]);
     for (i = r_info->bounds[0]; i < r_info->bounds[1]; i++) {
         parse_page(r_info->times->building,
                    r_info->times->room,
                    r_info->html_pages[i],
                    r_info->times);
-        //printf("page %d\n", i);
     }   
 }
 
+/* ==================================================================== *
+ * retrieve_page:                                                       *
+ * Threaded function to retrieve webpages to major's class list. Input  *
+ * parse_info struct.                                                   *
+ * ==================================================================== */
 void * retrieve_page(void * params)
 {
     parse_info* r_info = params;
     int i;
-    //printf("left = %d, right = %d", r_info->left, r_info->right);
+
     for (i = r_info->bounds[0]; i < r_info->bounds[1]; i++) {
         r_info->html_pages[i] = getContent(r_info->URLs[i]);
         if (r_info->html_pages[i] == NULL); //pthread error exit
     }
 }
 
+/* ==================================================================== *
+ * inspect_classroom:                                                   *
+ * Searches the entire UW Tacoma class listing for classes within the   *
+ * specified building and room. Prints findings when complete.          *
+ * ==================================================================== */
 void inspect_classroom(const char * building, 
                        const char * room, 
                        const char * time_schedule_url, 
                        int retrieval_threads, 
                        int analysis_threads) 
 {
-    char buffer[80], * content, * walker;
+    char buffer[80], * content, * walker, ** webpages, ** webpageURLs;
     unsigned int len, idx, link_idx, k, webpage_size;
     idx = (retrieval_threads > analysis_threads)
                 ? retrieval_threads : analysis_threads;
@@ -293,16 +386,12 @@ void inspect_classroom(const char * building,
     time_schedule * schedule;
 
     webpage_size = 64;
-    char ** webpages;
-    char ** webpageURLs = malloc((webpage_size + 1) * sizeof(char*));
+    webpageURLs = malloc((webpage_size + 1) * sizeof(char*));
 
-    if (getMIMEType(time_schedule_url, buffer, 80)) {
+    if (getMIMEType(time_schedule_url, buffer, 80))
         printf("%s\n\n", buffer);
-	if ((content = getContent(time_schedule_url)) != NULL) {
-            printf("%s\n", content);
-            //free(content);
-        }
-    }
+    if ((content = getContent(time_schedule_url)) == NULL)
+        printf("error here\n");
 
     len = strlen(content);
     walker = content;
@@ -331,16 +420,15 @@ void inspect_classroom(const char * building,
  
     webpages = malloc(k * sizeof(char *));
     initialize_schedule(&schedule, building, room);
-///*
+
     for (idx = 0; idx < retrieval_threads; idx++) {
         r_info[idx].URLs = webpageURLs;
         r_info[idx].html_pages = webpages;
         r_info[idx].bounds[0] = ((k/retrieval_threads)*idx);
         r_info[idx].bounds[1] = ((k/retrieval_threads)*(idx+1));
         pthread_create(&r_threads[idx], NULL, &retrieve_page, &r_info[idx]);
-        //printf("%d %s\n", idx, webpageURLs[idx]);
-        //printf("%s\n", webpages[idx]);
     }
+
     for (idx = 0; idx < retrieval_threads; idx++)
         pthread_join(r_threads[idx], NULL);
 
@@ -358,7 +446,5 @@ void inspect_classroom(const char * building,
 
     sort_schedule(schedule);
     print_schedule(schedule);
-//*/
-
 }
 
