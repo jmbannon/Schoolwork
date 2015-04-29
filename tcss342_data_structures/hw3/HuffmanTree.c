@@ -5,7 +5,7 @@
  Date:      04/25/15
  Class:     TCSS 342: Data Structures
  School:    University of Washington Tacoma
- Desc:      Uses Huffman Trees to compress text files.
+ Desc:      Uses Huffman Trees to compress and decompress text files.
  Copyright: Use for educational purposes only.
 
  ====================================================================
@@ -19,7 +19,7 @@
 
 /*
  ====================================================================
-    Bit Operators
+ =  Bit Operators  ==================================================
  ====================================================================
 */
 
@@ -30,7 +30,7 @@
 
 /*
  ====================================================================
-    Structures
+ =  Structures  ====================================================
  ====================================================================
 */
 
@@ -48,12 +48,255 @@ typedef struct __table_n_ {
 
 /*
  ====================================================================
-    Function Prototypes
+ =  Function Prototypes  ============================================
  ====================================================================
 */
 
- // WIP
+/* User Functions */
+int Compress(const char * filename, 
+             const char * outputname);
 
+int Decompress(const char * filename,
+               const char * outputname);
+
+/* Encode (Compress) Functions */
+int Encode(FILE *in, 
+           FILE *out);
+
+tree_t* buildTree(unsigned int freq[], 
+                  unsigned int * charCount);
+
+unsigned int getCodeWord(t_node** table, 
+                         unsigned int charCount,
+                         unsigned char c);
+
+void printCodewords(t_node** table, 
+                    unsigned int charCount);
+
+void writeHeader(FILE *out, 
+                 t_node** table,
+                 unsigned int charCount);
+
+tree_t** merge(tree_t** tree_1, 
+               tree_t** tree_2, 
+               size_t size1, 
+               size_t size2);
+
+tree_t** mergeSort(tree_t** tree_a, 
+                   size_t size);
+
+/* Decode (Decompress) Functions */
+int Decode(FILE * in,
+           FILE * out);
+
+tree_t* rebuildTree(FILE * in,
+                    unsigned int charCount);
+
+t_node** buildTable(tree_t* head,
+                  unsigned int charCount);
+
+void traverseTree(t_node** table,
+                  tree_t* node,
+                  unsigned int codeword,
+                  unsigned char binIndex,
+                  unsigned int * index);
+
+/*
+ ====================================================================
+ =  Functions  ======================================================
+ ====================================================================
+*/
+
+
+/* ==================================================================== *
+ *  Compress:                                                           *
+ *  Compresses the specified text file and writes it to the             *
+ *  specified output name.                                              *
+ * ==================================================================== */
+int Compress(const char * filename, 
+             const char * outputname) 
+{
+    FILE * in;
+    FILE * out;
+    in = fopen(filename, "r");
+    out = fopen(outputname, "w");
+    Encode(in, out);
+    fclose(in);
+    fclose(out);
+}
+
+/* ==================================================================== *
+ *  Decompress:                                                         *
+ *  Decompresses the specified binary file and writes it to the         *
+ *  specified output name.                                              *
+ * ==================================================================== */
+int Decompress(const char * filename,
+               const char * outputname) 
+{
+    FILE * in;
+    FILE * out;
+    in = fopen(filename, "rb");
+    out = fopen(outputname, "w");
+    Decode(in, out);
+    fclose(in);
+    fclose(out);
+}
+
+/* ==================================================================== *
+ *  Encode:                                                             *
+ *  Encodes an opened text file and writes to an opened binary file.    *
+ * ==================================================================== */
+int Encode(FILE *in, 
+           FILE *out) 
+{
+    unsigned int c, bufferSize, bitBuffer, codeword, charCount, end;
+    unsigned int frequency[CHAR_RANGE] = { 0 };
+    int bindex;
+    t_node** table;
+    
+    while ((c = fgetc(in)) != EOF) frequency[c]++;
+    frequency[END_OF_TEXT]++;
+    rewind(in);
+
+    tree_t* head = buildTree(frequency, &charCount);
+    table = buildTable(head, charCount);
+ 
+    writeHeader(out, table, charCount);
+    printCodewords(table, charCount);
+
+    bitBuffer = 0;
+    bufferSize = 0;
+    end = 0;
+    while ((c = fgetc(in)) != EOF) {
+        codeword = getCodeWord(table, charCount, c);
+end_of_file:
+        bindex = 31;
+        while (!CHECK_BIT(bindex--, codeword));
+        while (bindex >= 0) {
+            if (CHECK_BIT(bindex--, codeword))
+                ENCODE_BIT(bufferSize++, bitBuffer);
+            else
+                bufferSize++;
+
+            if (bufferSize == 32) {
+                fwrite(&bitBuffer, sizeof(unsigned int), 1, out);
+                bufferSize = 0;
+                bitBuffer = 0;
+            }
+        }
+    }
+    if (!end) {
+        end = 1;
+        codeword = getCodeWord(table, charCount, END_OF_TEXT);
+        goto end_of_file;
+    }
+    if (bufferSize)
+        fwrite(&bitBuffer, sizeof(unsigned int), 1, out);
+}
+
+/* ==================================================================== *
+ *  buildTree:                                                          *
+ *  Builds a Huffman Tree using array of character frequencys.          *
+ * ==================================================================== */
+tree_t* buildTree(unsigned int freq[], 
+                  unsigned int * charCount) 
+{
+    int i, len = 0;
+    tree_t** tqueue = malloc(CHAR_RANGE*sizeof(tree_t*));
+
+    for (i = 0; i < CHAR_RANGE; i++) {
+        if (freq[i] > 0) {
+            tree_t* temp = malloc(sizeof(tree_t));
+            temp->leaf = (char)i;
+            temp->weight = freq[i];
+            tqueue[len++] = temp;
+        }
+    }
+    *charCount = len;
+
+    while (len > 1) {
+        tree_t* toAdd = malloc(sizeof(tree_t));
+        toAdd->weight = 0;
+
+        tqueue = mergeSort(tqueue, len);
+        
+        toAdd->left = tqueue[--len];
+        toAdd->weight += tqueue[len]->weight;
+
+        toAdd->right = tqueue[--len];
+        toAdd->weight += tqueue[len]->weight;
+        tqueue[len++] = toAdd;
+    }
+    tree_t* head = malloc(sizeof(tree_t*));
+    head = tqueue[0];
+    free(tqueue);
+    return head;
+}
+
+/* ==================================================================== *
+ *  getCodeWord:                                                        *
+ *  Returns the codeword from the table for the character given.        *
+ * ==================================================================== */
+unsigned int getCodeWord(t_node** table, 
+                         unsigned int charCount,
+                         unsigned char c) 
+{
+    int i;
+    for (i = 0; i < charCount; i++) {
+        if (c != table[i]->character) continue;
+        else return table[i]->codeword;
+    }
+    printf("unreachable\n");
+    return 0;
+}
+
+/* ==================================================================== *
+ *  printCodewords:                                                     *
+ *  Writes all codeword's binary equivalence to a text file.            *
+ * ==================================================================== */
+void printCodewords(t_node** table, 
+                    unsigned int charCount)
+{
+    FILE * out;
+    int i, j;
+
+    out = fopen("codewords.txt", "w");
+
+    for (i = 0; i < charCount; i++) {
+        fprintf(out, "%c : ", table[i]->character);
+        j = 31;
+        while(!CHECK_BIT(j--, table[i]->codeword));
+        while(j >= 0) {
+            if (CHECK_BIT(j--, table[i]->codeword))
+                fprintf(out, "%d", (int)1);
+            else
+                fprintf(out, "%d", (int)0);
+        }
+        fprintf(out, "\n");
+    }
+    fclose(out);
+}
+
+/* ==================================================================== *
+ *  writeHeader:                                                        *
+ *  Writes the test number, amount of unique chars, and the chars       *
+ *  corresponding to the table followed by their codeword.              *
+ * ==================================================================== */
+void writeHeader(FILE *out, 
+                 t_node** table,
+                 unsigned int charCount) 
+{
+    int i;
+    const unsigned int verification = 13370666;
+
+    fwrite(&verification, sizeof(unsigned int), 1, out);
+    fwrite(&charCount, sizeof(unsigned int), 1, out);
+
+    for (i = 0; i < charCount; i++) {
+        fwrite(&table[i]->character, sizeof(unsigned char), 1, out);
+        fwrite(&table[i]->codeword, sizeof(unsigned int), 1, out);
+    }
+}
 
 /* ==================================================================== *
  *  merge:                                                              *
@@ -118,184 +361,53 @@ tree_t** mergeSort(tree_t** tree_a,
 }
 
 /* ==================================================================== *
- *  buildTree:                                                          *
- *  Builds a Huffman Tree using array of character frequencys.          *
+ *  Decode:                                                             *
+ *  Decodes an opened compressed binary file and writes it to an        *
+ *  opened textfile.                                                    *
  * ==================================================================== */
-tree_t* buildTree(unsigned int freq[], 
-                  unsigned int * charCount) 
+int Decode(FILE * in,
+           FILE * out)
 {
-    int i, len = 0;
-    tree_t** tqueue = malloc(CHAR_RANGE*sizeof(tree_t*));
-
-    for (i = 0; i < CHAR_RANGE; i++) {
-        if (freq[i] > 0) {
-            tree_t* temp = malloc(sizeof(tree_t));
-            temp->leaf = (char)i;
-            temp->weight = freq[i];
-            tqueue[len++] = temp;
-        }
-    }
-    *charCount = len;
-
-    while (len > 1) {
-        tree_t* toAdd = malloc(sizeof(tree_t));
-        toAdd->weight = 0;
-
-        tqueue = mergeSort(tqueue, len);
-        
-        toAdd->left = tqueue[--len];
-        toAdd->weight += tqueue[len]->weight;
-
-        toAdd->right = tqueue[--len];
-        toAdd->weight += tqueue[len]->weight;
-        tqueue[len++] = toAdd;
-    }
-    tree_t* head = malloc(sizeof(tree_t*));
-    head = tqueue[0];
-    free(tqueue);
-    return head;
-}
-
-/* ==================================================================== *
- *  traverseTree:                                                       *
- *                                                                      *
- * ==================================================================== */
-void traverseTree(t_node** table,
-                  tree_t* node,
-                  unsigned int codeword,
-                  unsigned char binIndex,
-                  unsigned int * index) 
-{
-    if (!node->left && !node->right) {
-        table[*index] = malloc(sizeof(t_node));
-        table[*index]->character = node->leaf;
-        table[*index]->codeword = codeword;
-        (*index)++;
-        printf("char %d : codeword %x\n", (unsigned char)node->leaf, codeword);
-        return;
-    } 
-    SHIFT_CODE(codeword);
-    if (node->left) {
-        traverseTree(table, node->left, codeword, binIndex, index);
-    }
-    if (node->right) {
-        WRITE_BIT(codeword);
-        traverseTree(table, node->right, codeword, binIndex, index);
-    }
-}
-             
-
-t_node** buildTable(tree_t* head,
-                  unsigned int charCount) 
-{
-    unsigned int i, codeword = 0x1, bindex = 1;
-    unsigned int * index = calloc(1, sizeof(unsigned int));
-    t_node** table = malloc(sizeof(t_node*)*charCount);
-    traverseTree(table, head, codeword, bindex, index);
-    return table;
-}
-
-void printCodewords(t_node** table, 
-                    unsigned int charCount)
-{
-    FILE * out;
-    int i, j;
-
-    out = fopen("codewords.txt", "w");
-
-    for (i = 0; i < charCount; i++) {
-        fprintf(out, "%c : ", table[i]->character);
-        j = 31;
-        while(!CHECK_BIT(j--, table[i]->codeword));
-        while(j >= 0) {
-            if (CHECK_BIT(j--, table[i]->codeword))
-                fprintf(out, "%d", (int)1);
-            else
-                fprintf(out, "%d", (int)0);
-        }
-        fprintf(out, "\n");
-    }
-    fclose(out);
-}
-
-unsigned int getCodeWord(t_node** table, 
-                         unsigned int charCount,
-                         unsigned char c) 
-{
+    unsigned int j, charCount, buffer;
+    char character;
     int i;
-    //printf("searching for %d\n", c);
-    for (i = 0; i < charCount; i++) {
-        if (c != table[i]->character) continue;
-        else return table[i]->codeword;
-    }
-    printf("unreachable\n");
-    return 0;
-}
 
-void writeHeader(FILE *out, 
-                 t_node** table,
-                 unsigned int charCount) 
-{
-    int i;
-    const unsigned int verification = 13370666;
+    fread(&j, sizeof(unsigned int), 1, in);
+    if (j != 13370666) return -1;
 
-    fwrite(&verification, sizeof(unsigned int), 1, out);
-    fwrite(&charCount, sizeof(unsigned int), 1, out);
-
-    for (i = 0; i < charCount; i++) {
-        fwrite(&table[i]->character, sizeof(unsigned char), 1, out);
-        fwrite(&table[i]->codeword, sizeof(unsigned int), 1, out);
-    }
-}
-
-int Encode(FILE *in, 
-           FILE *out) 
-{
-    unsigned int c, bufferSize, bitBuffer, codeword, charCount, end;
-    unsigned int frequency[CHAR_RANGE] = { 0 };
-    int bindex;
-    t_node** table;
+    fread(&charCount, sizeof(unsigned int), 1, in); 
     
-    while ((c = fgetc(in)) != EOF) frequency[c]++;
-    frequency[END_OF_TEXT]++;
-    rewind(in);
+    tree_t* head = rebuildTree(in, charCount);
+    tree_t* traverse = head;
 
-    tree_t* head = buildTree(frequency, &charCount);
-    table = buildTable(head, charCount);
- 
-    writeHeader(out, table, charCount);
-    printCodewords(table, charCount);
-
-    bitBuffer = 0;
-    bufferSize = 0;
-    end = 0;
-    while ((c = fgetc(in)) != EOF) {
-        codeword = getCodeWord(table, charCount, c);
-end_of_file:
-        bindex = 31;
-        while (!CHECK_BIT(bindex--, codeword));
-        while (bindex >= 0) {
-            if (CHECK_BIT(bindex--, codeword))
-                ENCODE_BIT(bufferSize++, bitBuffer);
-            else
-                bufferSize++;
-
-            if (bufferSize == 32) {
-                fwrite(&bitBuffer, sizeof(unsigned int), 1, out);
-                bufferSize = 0;
-                bitBuffer = 0;
+    j = 0;
+    while (!feof(in)) {
+        i = 31;
+        fread(&buffer, sizeof(unsigned int), 1, in);
+        while (i >= 0) {
+            if (CHECK_BIT(i--, buffer)) {
+                assert(traverse->right);
+                traverse = traverse->right;
+            } else {
+                assert(traverse->left);
+                traverse = traverse->left;
+            }
+            if (!traverse->right && !traverse->left) {
+                if (traverse->leaf == END_OF_TEXT) 
+                    return 1;
+                fprintf(out, "%c", traverse->leaf);
+                traverse = head;        
             }
         }
     }
-    if (!end) {
-        end = 1;
-        codeword = getCodeWord(table, charCount, END_OF_TEXT);
-        goto end_of_file;
-    }
-    if (bufferSize)
-        fwrite(&bitBuffer, sizeof(unsigned int), 1, out);
+    return -1; 
 }
 
+/* ==================================================================== *
+ *  rebuildTree:                                                        *
+ *  Rebuilds the huffman tree for a compressed binary file that is      *
+ *  open.                                                               *
+ * ==================================================================== */
 tree_t* rebuildTree(FILE * in,
                     unsigned int charCount)
 {
@@ -318,12 +430,10 @@ tree_t* rebuildTree(FILE * in,
             while (j >= 0) {
                 k++;
                 if (CHECK_BIT(j--, codeword)) {
-                    //printf("1");
                     if (!traverse->right) 
                         traverse->right = calloc(1, sizeof(tree_t));
                     traverse = traverse->right;
                 } else {
-                    //printf("0");
                     if (!traverse->left)
                         traverse->left = calloc(1, sizeof(tree_t));
                     traverse = traverse->left;
@@ -332,74 +442,49 @@ tree_t* rebuildTree(FILE * in,
         if (!traverse)
             traverse = calloc(1, sizeof(tree_t));
         traverse->leaf = character;
-        //printf(" address %x writing leaf %c at depth %d\n", codeword, traverse->leaf, k);
     }
     return head;
 }
 
-int Decode(FILE * in,
-           FILE * out)
+/* ==================================================================== *
+ *  buildTable:                                                         *
+ *  Builds the codeword table from a compressed header file and assigns *
+ *  it to a t_node table.                                               *
+ * ==================================================================== */
+t_node** buildTable(tree_t* head,
+                  unsigned int charCount) 
 {
-    unsigned int j, charCount, buffer;
-    char character;
-    int i;
+    unsigned int i, codeword = 0x1, bindex = 1;
+    unsigned int * index = calloc(1, sizeof(unsigned int));
+    t_node** table = malloc(sizeof(t_node*)*charCount);
+    traverseTree(table, head, codeword, bindex, index);
+    return table;
+}
 
-    fread(&j, sizeof(unsigned int), 1, in);
-    if (j != 13370666) return -1;
-
-    fread(&charCount, sizeof(unsigned int), 1, in); 
-    //printf("char count = %d\n", charCount);
-    
-    tree_t* head = rebuildTree(in, charCount);
-    tree_t* traverse = head;
-
-    j = 0;
-    while (!feof(in)) {
-        i = 31;
-        fread(&buffer, sizeof(unsigned int), 1, in);
-        //printf("buffer: %x\n", buffer);
-        while (i >= 0) {
-            if (CHECK_BIT(i--, buffer)) {
-                //printf("1");
-                assert(traverse->right);
-                traverse = traverse->right;
-            } else {
-                //printf("0");
-                assert(traverse->left);
-                traverse = traverse->left;
-            }
-            if (!traverse->right && !traverse->left) {
-                if (traverse->leaf == END_OF_TEXT) 
-                    return 1;
-                fprintf(out, "%c", traverse->leaf);
-                //printf("printing %c from %x\n", traverse->leaf, traverse);  
-                traverse = head;        
-            }
-        }
+/* ==================================================================== *
+ *  traverseTree:                                                       *
+ *  Adds char and codeword to each leaf in the tree.                    *
+ * ==================================================================== */
+void traverseTree(t_node** table,
+                  tree_t* node,
+                  unsigned int codeword,
+                  unsigned char binIndex,
+                  unsigned int * index) 
+{
+    if (!node->left && !node->right) {
+        table[*index] = malloc(sizeof(t_node));
+        table[*index]->character = node->leaf;
+        table[*index]->codeword = codeword;
+        (*index)++;
+        return;
+    } 
+    SHIFT_CODE(codeword);
+    if (node->left) {
+        traverseTree(table, node->left, codeword, binIndex, index);
     }
-    return -1; 
+    if (node->right) {
+        WRITE_BIT(codeword);
+        traverseTree(table, node->right, codeword, binIndex, index);
+    }
 }
 
-int Decompress(const char * filename,
-               const char * outputname) 
-{
-    FILE * in;
-    FILE * out;
-    in = fopen(filename, "rb");
-    out = fopen(outputname, "w");
-    Decode(in, out);
-    fclose(in);
-    fclose(out);
-}
-
-int Compress(const char * filename, 
-             const char * outputname) 
-{
-    FILE * in;
-    FILE * out;
-    in = fopen(filename, "r");
-    out = fopen(outputname, "w");
-    Encode(in, out);
-    fclose(in);
-    fclose(out);
-}
