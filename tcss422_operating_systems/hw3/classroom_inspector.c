@@ -1,15 +1,15 @@
 /*
-====================================================================
-* 
-* Author:      Jesse Bannon
-* Date:        04/25/15
-* Class:       TCSS 342: Data Structures
-* School:      University of Washington Tacoma
-* Desc:        Parses UW Tacoma class pages and displays all classes
-*              in a particular classroom.
-* Copyright:   Use for educational purposes only.
-* 
-====================================================================
+===============================================================================
+*                                                                             *
+* Author:      Jesse Bannon                                                   *
+* Date:        04/25/15                                                       *
+* Class:       TCSS 342: Data Structures                                      *
+* School:      University of Washington Tacoma                                *
+* Desc:        Parses UW Tacoma class pages and displays all classes          *
+*              in a particular classroom.                                     *
+* Copyright:   Use for educational purposes only.                             *
+*                                                                             *
+===============================================================================
 */
 
 #include <stdio.h>
@@ -21,9 +21,9 @@
 #include "util.h"
 
 /*
-====================================================================
-= Structures and Enums  ============================================
-====================================================================
+===============================================================================
+= Structures and Enums  =======================================================
+===============================================================================
 */
 
 typedef enum _days {
@@ -43,22 +43,135 @@ typedef struct _parse_info {
     time_schedule * times;
 } parse_info;
 
-/*
-====================================================================
-= Function Prototypes ==============================================
-====================================================================
-*/
-
-//WIP
-
-
-
+unsigned int getURLS(const char * building,
+            const char * room,
+            const char * time_schedule_url,
+            char * ** webpageURLs);
 
 /*
-====================================================================
-= Functions ========================================================
-====================================================================
+===============================================================================
+= Function Prototypes =========================================================
+===============================================================================
 */
+
+
+/* Essential Function */
+void inspect_classroom(const char * building, 
+                       const char * room, 
+                       const char * time_schedule_url, 
+                       int retrieval_threads, 
+                       int analysis_threads);
+
+
+/* Parsing Functions */
+unsigned int getURLS(const char * building,
+            const char * room,
+            const char * time_schedule_url,
+            char * ** webpageURLs);
+
+void * retrieve_page(void * params);
+
+void * inspect_page(void * params);
+
+void parse_page(const char * building,
+                const char * room,
+                char * classpage,
+                time_schedule * schedule);
+
+void add_class(time_schedule * schedule,
+               char * webpage,
+               unsigned int class_idx,
+               unsigned int times_idx,
+               unsigned int class_len,
+               unsigned int times_len,
+               day d);
+
+
+/* Printing Functions */
+void sort_schedule(time_schedule * schedule);
+
+void sort_day(char ** times,
+              unsigned int size);
+
+void print_day(char ** day_sched,
+               unsigned int size,
+               day d);
+
+void print_schedule(time_schedule * schedule);
+
+
+/* Utility Functions */
+void initialize_schedule(time_schedule ** schedule,
+                         const char * building,
+                         const char * room);
+
+unsigned int get_start_time(char * time);
+
+unsigned int increaseAllocation(char ** array,
+                                unsigned int * size);
+
+int strcmpin(char * str1,
+             const char * str2,
+             const size_t n);
+
+
+/*
+===============================================================================
+= Functions ===================================================================
+===============================================================================
+*/
+
+
+/* ==================================================================== *
+ * inspect_classroom:                                                   *
+ * Searches the entire UW Tacoma class listing for classes within the   *
+ * specified building and room. Prints findings when complete.          *
+ * ==================================================================== */
+void inspect_classroom(const char * building, 
+                       const char * room, 
+                       const char * time_schedule_url, 
+                       int retrieval_threads, 
+                       int analysis_threads) 
+{
+    char * content, * walker, ** webpages, ** webpageURLs;
+    unsigned int len, idx, link_idx, k, webpage_size, url_size;
+    time_schedule * schedule;
+
+    idx = (retrieval_threads > analysis_threads)
+                ? retrieval_threads : analysis_threads;
+    pthread_t r_threads[idx];
+    parse_info r_info[idx];
+    
+    url_size = getURLS(building, room, time_schedule_url, &webpageURLs);
+    webpages = malloc(url_size * sizeof(char *));
+    initialize_schedule(&schedule, building, room);
+
+    for (idx = 0; idx < retrieval_threads; idx++) {
+        r_info[idx].URLs = webpageURLs;
+        r_info[idx].html_pages = webpages;
+        r_info[idx].bounds[0] = ((url_size/retrieval_threads)*idx);
+        r_info[idx].bounds[1] = ((url_size/retrieval_threads)*(idx+1));
+        pthread_create(&r_threads[idx], NULL, &retrieve_page, &r_info[idx]);
+    }
+
+    for (idx = 0; idx < retrieval_threads; idx++)
+        pthread_join(r_threads[idx], NULL);
+
+    for (idx = 0; idx < analysis_threads; idx++) {
+        r_info[idx].URLs = webpageURLs;
+        r_info[idx].html_pages = webpages;
+        r_info[idx].bounds[0] = ((url_size/analysis_threads)*idx);
+        r_info[idx].bounds[1] = ((url_size/analysis_threads)*(idx+1));
+        r_info[idx].times = schedule;
+        pthread_create(&r_threads[idx], NULL, &inspect_page, &r_info[idx]);
+    }
+
+    for (idx = 0; idx < analysis_threads; idx++)
+        pthread_join(r_threads[idx], NULL);
+
+    sort_schedule(schedule);
+    print_schedule(schedule);
+}
 
 
 /* ==================================================================== *
@@ -107,7 +220,7 @@ int strcmpin(char * str1,
  * ==================================================================== */
 void initialize_schedule(time_schedule ** schedule,
                          const char * building,
-                         const char * room) 
+                         const char * room)
 {
     (*schedule) = malloc(sizeof(time_schedule)); 
     (*schedule)->building = building;
@@ -408,56 +521,4 @@ unsigned int getURLS(const char * building,
     return webpage_count;
 }
 
-
-
-/* ==================================================================== *
- * inspect_classroom:                                                   *
- * Searches the entire UW Tacoma class listing for classes within the   *
- * specified building and room. Prints findings when complete.          *
- * ==================================================================== */
-void inspect_classroom(const char * building, 
-                       const char * room, 
-                       const char * time_schedule_url, 
-                       int retrieval_threads, 
-                       int analysis_threads) 
-{
-    char * content, * walker, ** webpages, ** webpageURLs;
-    unsigned int len, idx, link_idx, k, webpage_size, url_size;
-    time_schedule * schedule;
-
-    idx = (retrieval_threads > analysis_threads)
-                ? retrieval_threads : analysis_threads;
-    pthread_t r_threads[idx];
-    parse_info r_info[idx];
-    
-    url_size = getURLS(building, room, time_schedule_url, &webpageURLs);
-    webpages = malloc(url_size * sizeof(char *));
-    initialize_schedule(&schedule, building, room);
-
-    for (idx = 0; idx < retrieval_threads; idx++) {
-        r_info[idx].URLs = webpageURLs;
-        r_info[idx].html_pages = webpages;
-        r_info[idx].bounds[0] = ((url_size/retrieval_threads)*idx);
-        r_info[idx].bounds[1] = ((url_size/retrieval_threads)*(idx+1));
-        pthread_create(&r_threads[idx], NULL, &retrieve_page, &r_info[idx]);
-    }
-
-    for (idx = 0; idx < retrieval_threads; idx++)
-        pthread_join(r_threads[idx], NULL);
-
-    for (idx = 0; idx < analysis_threads; idx++) {
-        r_info[idx].URLs = webpageURLs;
-        r_info[idx].html_pages = webpages;
-        r_info[idx].bounds[0] = ((url_size/analysis_threads)*idx);
-        r_info[idx].bounds[1] = ((url_size/analysis_threads)*(idx+1));
-        r_info[idx].times = schedule;
-        pthread_create(&r_threads[idx], NULL, &inspect_page, &r_info[idx]);
-    }
-
-    for (idx = 0; idx < analysis_threads; idx++)
-        pthread_join(r_threads[idx], NULL);
-
-    sort_schedule(schedule);
-    print_schedule(schedule);
-}
 
