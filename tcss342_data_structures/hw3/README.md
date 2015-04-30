@@ -14,5 +14,9 @@ Simply clone the repository and build the executable by running `make` in its di
 Building a huffman tree for encoding and decoding files in C was a great way to practice important coding practices such as descriptive variable names and organization of functions.  The data structures needed to produce and utilize this unique binary tree was fun to write as well.  Feel free to clone this to use as an educational sample.
 
 I have included the text file of *War and Peace* as a test file. 
+
+### Code Analysis for Encoding Files
+A PDF of the analysis can be found [here](https://github.com/jmbannon/Schoolwork/blob/master/tcss342_data_structures/hw3/encode_runtime_analysis.pdf).
+
 ### License
 Use for educational purposes only.
