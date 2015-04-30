@@ -51,9 +51,7 @@ typedef struct __table_n_ {
  ====================================================================
  =  Function Prototypes  ============================================
  ====================================================================
-*
-
-* User Functions found in header. */
+*/
 
 /* Encode (Compress) Functions */
 int Encode(FILE *in, 
@@ -97,6 +95,13 @@ void traverseTree(t_node** table,
                   unsigned char binIndex,
                   unsigned int * index);
 
+/* Statistic Functions */
+int file_length(FILE *f);
+
+long timediff(clock_t t1, 
+              clock_t t2);
+
+
 /*
  ====================================================================
  =  Functions  ======================================================
@@ -109,24 +114,6 @@ void traverseTree(t_node** table,
  *  Compresses the specified text file and writes it to the             *
  *  specified output name.                                              *
  * ==================================================================== */
-int file_length(FILE *f)
-{
-    int pos;
-    int end;
-
-    pos = ftell(f);
-    fseek(f, 0, SEEK_END);
-    end = ftell(f);
-    fseek(f, pos, SEEK_SET);
-    return end;
-}
-
-long timediff(clock_t t1, 
-              clock_t t2)
-{
-    return ((double)t2-t1) / CLOCKS_PER_SEC * 1000;
-}
-
 statistics Compress(const char * filename, 
                     const char * outputname) 
 {
@@ -137,6 +124,10 @@ statistics Compress(const char * filename,
 
     in = fopen(filename, "r");
     out = fopen(outputname, "w");
+    if (!in || !out) {
+        stats.valid = 0;
+        return stats;
+    }
 
     t1 = clock();
     Encode(in, out);
@@ -150,6 +141,7 @@ statistics Compress(const char * filename,
 
     fclose(in);
     fclose(out);
+    stats.valid = 1;
     return stats;
 }
 
@@ -168,7 +160,10 @@ statistics Decompress(const char * filename,
 
     in = fopen(filename, "rb");
     out = fopen(outputname, "w");
-
+    if (!in || !out) {
+        stats.valid = 0;
+        return stats;
+    }
     t1 = clock();
     Decode(in, out);
     t2 = clock();
@@ -238,7 +233,7 @@ end_of_file:
 
 /* ==================================================================== *
  *  buildTree:                                                          *
- *  Builds a Huffman Tree using array of character frequencys.          *
+ *  Builds a Huffman Tree using array of character frequencies.         *
  * ==================================================================== */
 tree_t* buildTree(unsigned int freq[], 
                   unsigned int * charCount) 
@@ -448,7 +443,7 @@ int Decode(FILE * in,
 /* ==================================================================== *
  *  rebuildTree:                                                        *
  *  Rebuilds the huffman tree for a compressed binary file that is      *
- *  open.                                                               *
+ *  open from the header.                                               *
  * ==================================================================== */
 tree_t* rebuildTree(FILE * in,
                     unsigned int charCount)
@@ -490,11 +485,11 @@ tree_t* rebuildTree(FILE * in,
 
 /* ==================================================================== *
  *  buildTable:                                                         *
- *  Builds the codeword table from a compressed header file and assigns *
- *  it to a t_node table.                                               *
+ *  Builds the codeword table from a Huffman Tree and assigns it to a   *
+ *  t_node table.                                                       *
  * ==================================================================== */
 t_node** buildTable(tree_t* head,
-                  unsigned int charCount) 
+                    unsigned int charCount) 
 {
     unsigned int i, codeword = 0x1, bindex = 1;
     unsigned int * index = calloc(1, sizeof(unsigned int));
@@ -529,4 +524,32 @@ void traverseTree(t_node** table,
         traverseTree(table, node->right, codeword, binIndex, index);
     }
 }
+
+/* ==================================================================== *
+ *  file_length:                                                        *
+ *  Returns the length in bits of an open file.                         *
+ * ==================================================================== */
+int file_length(FILE *f)
+{
+    int pos;
+    int end;
+
+    pos = ftell(f);
+    fseek(f, 0, SEEK_END);
+    end = ftell(f);
+    fseek(f, pos, SEEK_SET);
+    return end;
+}
+
+/* ==================================================================== *
+ *  timediff:                                                           *
+ *  Returns the difference between two clock_t variables in             *
+ *  milliseconds.                                                       *
+ * ==================================================================== */
+long timediff(clock_t t1, 
+              clock_t t2)
+{
+    return ((double)t2-t1) / CLOCKS_PER_SEC * 1000;
+}
+
 
