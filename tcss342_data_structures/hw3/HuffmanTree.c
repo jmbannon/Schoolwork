@@ -176,6 +176,7 @@ statistics Decompress(const char * filename,
     fclose(in);
     fclose(out);
 
+    stats.valid = 1;
     return stats;
 }
 
