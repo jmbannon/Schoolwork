@@ -3,7 +3,7 @@
 *                                                                             *
 * Author:      Jesse Bannon                                                   *
 * Date:        04/25/15                                                       *
-* Class:       TCSS 342: Data Structures                                      *
+* Class:       TCSS 422: Operating Systems                                    *
 * School:      University of Washington Tacoma                                *
 * Desc:        Parses UW Tacoma class pages and displays all classes          *
 *              in a particular classroom.                                     *
