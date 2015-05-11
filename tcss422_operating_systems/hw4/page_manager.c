@@ -34,8 +34,7 @@ typedef struct _frame_entry {
 } frame_entry; 
 
 struct _translation_info {
-    unsigned int virt_entries;
-    unsigned int phys_frames;
+    unsigned int virt_entries, phys_frames, time;
 } trans_info;
 
 /*
@@ -44,7 +43,6 @@ struct _translation_info {
 ===============================================================================
 */
 
-static unsigned int time;
 static memory_config config;
 static page_entry ** table;
 static frame_entry * frame_table;
@@ -74,7 +72,7 @@ unsigned int get_physical_address(unsigned int virt_address,
 void initialize_page_manager(memory_config mc)
 {
     unsigned int i;
-    time = 0;
+    trans_info.time = 0;
     trans_info.virt_entries 
             = POWER_TWO(mc.virtual_address_space - mc.page_size);
     trans_info.phys_frames
@@ -130,7 +128,7 @@ access_result access_memory(unsigned int pid,
         result.physical_address = get_physical_address(virtual_address,
                                                  result.physical_page_number,
                                                  config.page_size);
-        frame_table[result.physical_page_number].RU = time++;
+        frame_table[result.physical_page_number].RU = trans_info.time++;
         result.page_fault = false;
         return result;
     }
@@ -139,7 +137,7 @@ access_result access_memory(unsigned int pid,
     for (i = 0; i < trans_info.phys_frames; i++) {
         if (frame_table[i].in_use == false) {
             frame_table[i].in_use = true;
-            frame_table[i].RU = time++;
+            frame_table[i].RU = trans_info.time++;
             frame_table[i].pid = pid;
             table[pid][virt_page_num].phys_page = i;
             table[pid][virt_page_num].valid = true;
@@ -155,7 +153,7 @@ access_result access_memory(unsigned int pid,
             LRU_page = i;
     }
     
-    frame_table[LRU_page].RU = time++;
+    frame_table[LRU_page].RU = trans_info.time++;
     frame_table[LRU_page].pid = pid;
     table[pid][virt_page_num].phys_page = LRU_page;
     table[pid][virt_page_num].valid = true;
