@@ -1,6 +1,6 @@
 #ifndef __HUFFMANTREE_H_
 #define __HUFFMANTREE_H_
-#define CHAR_RANGE 256
+#define HASH_TABLE_SIZE 32768
 #define END_OF_TEXT 3
 
 typedef struct _statistics_t {

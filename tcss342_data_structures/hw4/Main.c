@@ -40,13 +40,6 @@ void printStatistics(statistics stats,
 
 int main(int argc, char *argv[])
 {
-    Compress("WarAndPeace.txt", "nope");
-    return 0;
-}
-
-/*
-int main(int argc, char *argv[])
-{
     BOOL compress;
     statistics stats;
 
@@ -78,4 +71,4 @@ int main(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-*/
+
