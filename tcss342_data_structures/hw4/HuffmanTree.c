@@ -47,6 +47,8 @@ typedef struct __table_n_ {
     unsigned int value;
 } t_node;
 
+static statistics stats;
+
 /*
  ====================================================================
  =  Function Prototypes  ============================================
@@ -120,6 +122,9 @@ void traverseTree(t_node * hashTable,
                   unsigned char binIndex);
 
 /* Statistic Functions */
+void hashStats(unsigned int entries,
+               unsigned int probes[]);
+
 int file_length(FILE *f);
 
 long timediff(clock_t t1, 
@@ -144,7 +149,6 @@ statistics Compress(const char * filename,
     FILE * in;
     FILE * out;
     clock_t t1, t2;
-    statistics stats;
 
     in = fopen(filename, "r");
     out = fopen(outputname, "w");
@@ -180,7 +184,6 @@ statistics Decompress(const char * filename,
     FILE * in;
     FILE * out;
     time_t t1, t2;
-    statistics stats;
 
     in = fopen(filename, "rb");
     out = fopen(outputname, "w");
@@ -260,6 +263,7 @@ int Encode(FILE *in,
 
     tree_t* head = buildTree(hashTable, &charCount);
     buildTable(head, hashTable, charCount);
+    stats.entries = charCount;
  
     writeHeader(out, hashTable, charCount);
     printCodewords(hashTable, charCount);
@@ -532,14 +536,17 @@ unsigned int get(t_node * table,
                  unsigned int key,
                  char * word)
 {
-    unsigned int idx, i = 1;
-    if (table[key].key == NULL || strcmp(table[key].key, word) == 0)
+    unsigned int idx, i = 0;
+    if (table[key].key == NULL || strcmp(table[key].key, word) == 0) {
+        ++(stats.probes[0]);
         return key;
-    else
+    } else
         do {
-            idx = (i*i++) + key % HASH_TABLE_SIZE;
-            if (table[idx].key == NULL || strcmp(table[idx].key, word) == 0)
+            idx = (++i*i) + key % HASH_TABLE_SIZE;
+            if (table[idx].key == NULL || strcmp(table[idx].key, word) == 0) {
+                ++(stats.probes[i]);
                 return idx;
+            }
         } while (1);
 }
 
@@ -593,7 +600,7 @@ int Decode(FILE * in,
     if (j != 13370666) return -1;
 
     fread(&charCount, sizeof(unsigned int), 1, in); 
-    
+
     tree_t* head = rebuildTree(in, charCount);
     tree_t* traverse = head;
     j = 0;
