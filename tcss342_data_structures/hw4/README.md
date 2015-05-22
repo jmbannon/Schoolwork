@@ -7,7 +7,9 @@ Simply clone the repository and build the executable by running `make` in its di
 
 ### Usage:
 `./Compress [-c]  [txt_name] [bin_output]`  Compresses text file to binary file
+
 `./Compress [-cs] [txt_name] [bin_output]`  Compresses and displays hash table statistics
+
 `./Compress [-d]  [bin_name] [txt_output]`  Decompresses binary file to text file
 
 ### About
