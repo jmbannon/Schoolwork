@@ -9,9 +9,11 @@ void printUsage() {
     printf("*\n*\n");
     printf("* COMPRESSOR USAGE\n");
     printf("*\n");
-    printf("* [-c] [txt_name] [bin_output]");
+    printf("* [-c]  [txt_name] [bin_output]");
     printf(" Compresses text file to binary file\n");
-    printf("* [-d] [bin_name] [txt_output]");
+    printf("* [-cs] [txt_name] [bin_output]");
+    printf(" Compresses and shows hash statistics\n");
+    printf("* [-d]  [bin_name] [txt_output]");
     printf(" Decompresses binary file to text file\n");
     printf("*\n*\n");
 }
@@ -80,7 +82,7 @@ void printHashStatistics(statistics stats)
 
 int main(int argc, char *argv[])
 {
-    BOOL compress;
+    BOOL compress, showStats = 0;
     statistics stats;
 
     if (argc < 4) {
@@ -92,7 +94,10 @@ int main(int argc, char *argv[])
         compress = 1;
     else if (strcmp(argv[1], "-d") == 0)
         compress = 0;
-    else {
+    else if (strcmp(argv[1], "-cs") == 0) {
+        compress = 1;
+        showStats = 1;
+    } else {
         printUsage();
         return EXIT_SUCCESS;
     }
@@ -108,7 +113,7 @@ int main(int argc, char *argv[])
     }
 
     printStatistics(stats, compress);
-    if (compress) printHashStatistics(stats);
+    if (compress && showStats) printHashStatistics(stats);
     return EXIT_SUCCESS;
 }
 

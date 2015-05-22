@@ -6,6 +6,7 @@
  Class:     TCSS 342: Data Structures
  School:    University of Washington Tacoma
  Desc:      Uses Huffman Trees to compress and decompress text files.
+            Builds the tree using word frequency.
  Copyright: Use for educational purposes only.
 
  ====================================================================
@@ -31,13 +32,13 @@
 
 /*
  ====================================================================
- =  Structures  ====================================================
+ =  Structures  =====================================================
  ====================================================================
 */
 
 typedef struct __tree_t_ {
-    struct __tree_t_ *left;
-    struct __tree_t_ *right;
+    struct __tree_t_ * left;
+    struct __tree_t_ * right;
     unsigned int weight, codeword;
     char * leaf;    
 } tree_t;
@@ -56,11 +57,11 @@ static statistics stats;
 */
 
 /* Encode (Compress) Functions */
-int Encode(FILE *in, 
-           FILE *out);
+int Encode(FILE * in, 
+           FILE * out);
 
-tree_t* buildTree(t_node * hashTable, 
-                  unsigned int * charCount);
+tree_t * buildTree(t_node * hashTable, 
+                   unsigned int * charCount);
 
 unsigned int getCodeWord(t_node * hashTable,
                          unsigned char * c);
@@ -68,20 +69,34 @@ unsigned int getCodeWord(t_node * hashTable,
 void printCodewords(t_node * hashTable, 
                     unsigned int charCount);
 
-void writeHeader(FILE *out, 
+void writeHeader(FILE * out, 
                  t_node * hashTable,
                  unsigned int charCount);
 
-tree_t** merge(tree_t** tree_1, 
-               tree_t** tree_2, 
-               size_t size1, 
-               size_t size2);
+/* Initial Tree Sort Functions */
+tree_t ** merge(tree_t** tree_1, 
+                tree_t** tree_2, 
+                size_t size1, 
+                size_t size2);
 
-tree_t** mergeSort(tree_t** tree_a, 
-                   size_t size);
+tree_t ** mergeSort(tree_t ** tree_a, 
+                    size_t size);
 
-void prioritySort(tree_t** tree_a, 
-                  size_t size);
+/* Priority Queue Functions */
+tree_t * getMin(tree_t ** tree_a,
+                size_t * size);
+
+void priorityAdd(tree_t ** tree_array,
+                 tree_t * element, 
+                 size_t * size);
+
+void swapElements(tree_t ** tree_a,
+                  int indexOne,
+                  int indexTwo);
+
+int compareWeight(tree_t ** tree_a,
+                 int lessIndex,
+                 int greaterIndex);
 
 /* Hash Table Functions */
 t_node * buildHashTable();
@@ -109,8 +124,8 @@ void putCodeword(t_node * table,
 int Decode(FILE * in,
            FILE * out);
 
-tree_t* rebuildTree(FILE * in,
-                    unsigned int charCount);
+tree_t * rebuildTree(FILE * in,
+                     unsigned int charCount);
 
 void buildTable(tree_t * head,
                 t_node * hashTable,
@@ -125,11 +140,10 @@ void traverseTree(t_node * hashTable,
 void hashStats(unsigned int entries,
                unsigned int probes[]);
 
-int file_length(FILE *f);
+int file_length(FILE * f);
 
 long timediff(clock_t t1, 
               clock_t t2);
-
 
 /*
  ====================================================================
@@ -320,15 +334,13 @@ tree_t* buildTree(t_node * hashTable,
     while (len > 1) {
         tree_t* toAdd = calloc(1, sizeof(tree_t));
         toAdd->weight = 0;
+        toAdd->left = getMin(tqueue, &len);
+        toAdd->weight += toAdd->left->weight;
 
-        toAdd->left = tqueue[--len];
-        toAdd->weight += tqueue[len]->weight;
+        toAdd->right = getMin(tqueue, &len);
+        toAdd->weight += toAdd->right->weight;
 
-        toAdd->right = tqueue[--len];
-        toAdd->weight += tqueue[len]->weight;
-        tqueue[len++] = toAdd;
-
-        prioritySort(tqueue, len);
+        priorityAdd(tqueue, toAdd, &len);
     }
     tree_t* head = calloc(1, sizeof(tree_t*));
     head = tqueue[0];
@@ -418,7 +430,7 @@ tree_t** merge(tree_t** tree_1,
     i = j = k = 0;
 
     while (i < size1 && j < size2) {
-        if (tree_1[i]->weight > tree_2[j]->weight)
+        if (tree_1[i]->weight < tree_2[j]->weight)
             toReturn[k++] = tree_1[i++];
         else
             toReturn[k++] = tree_2[j++];
@@ -467,23 +479,93 @@ tree_t** mergeSort(tree_t** tree_a,
 }
 
 /* ==================================================================== *
+ *  getMin:                                                             *
+ *  Retrieves the minimum element from the root of the tree_t array,    *
+ *  swaps the last element with the root, and re-sorts until the        *
+ *  invariant is met.                                                   *
+ * ==================================================================== */
+tree_t * getMin(tree_t ** tree_a,
+                size_t * size)
+{
+    tree_t * toReturn = tree_a[0];
+    tree_a[0] = tree_a[--(*size)];
+
+    if (*size <= 1)
+        return toReturn;
+    else if (*size == 2) {
+        if (compareWeight(tree_a, 0, 1))
+            swapElements(tree_a, 0, 1);
+        return toReturn;
+    }
+    int element = 0, leftChild = 1, rightChild = 2;
+
+    while (leftChild < *size
+            && rightChild < *size
+            && (compareWeight(tree_a, element, leftChild)
+            || compareWeight(tree_a, element, rightChild))) {
+
+        if (compareWeight(tree_a, leftChild, rightChild)) {
+            swapElements(tree_a, element, rightChild);
+            element = rightChild;
+        } else {
+            swapElements(tree_a, element, leftChild);
+            element = leftChild;
+        }
+        leftChild = 1 + (element << 1);
+        rightChild = leftChild + 1;
+    }
+    return toReturn;    
+}
+
+/* ==================================================================== *
  *  prioritySort:                                                       *
  *  Use only when the new value is appended to the end of the array.    *
- *  Bubble sorts starting with the last value until the value prior to  *
- *  it is less than its value.                                          *
+ *  Sorts by swapping with parent until its parent is less than the     *
+ *  element or it is root.                                              *
  * ==================================================================== */
-void prioritySort(tree_t** tree_a, 
-                  size_t size) 
+void priorityAdd(tree_t ** tree_a,
+                 tree_t * element, 
+                 size_t * size) 
 {
-    int idx = size - 1;
-    while (idx > 0) {
-        if (tree_a[idx]->weight > tree_a[idx-1]->weight) {
-            tree_t * temp = tree_a[idx];
-            tree_a[idx] = tree_a[idx-1];
-            tree_a[idx-- -1] = temp;
-        } else
-            return;
+    tree_a[(*size)++] = element;
+
+    if (*size == 1)
+        return;
+
+    int idx = *size - 1;
+    int parentIdx = (idx-1) >> 1;
+    int max = 1;
+    
+    
+    while (tree_a[parentIdx]->weight > tree_a[idx]->weight && idx >= 0) {
+        swapElements(tree_a, parentIdx, idx);
+        idx = parentIdx;
+        parentIdx = (idx-1)/2;
     }
+}
+
+/* ==================================================================== *
+ *  swapElements:                                                       *
+ *  Swaps the two indexes in the tree_t array.                          *
+ * ==================================================================== */
+void swapElements(tree_t ** tree_a,
+                  int indexOne,
+                  int indexTwo)
+{
+    tree_t * temp = tree_a[indexOne];
+    tree_a[indexOne] = tree_a[indexTwo];
+    tree_a[indexTwo] = temp;
+}
+
+/* ==================================================================== *
+ *  compareWeight:                                                      *
+ *  Returns true if the less index is greater than the right index.     *
+ * ==================================================================== */
+int compareWeight(tree_t ** tree_a,
+                 int lessIndex,
+                 int greaterIndex)
+{
+    return tree_a[lessIndex]->weight > tree_a[greaterIndex]->weight;
 }
 
 /* ==================================================================== *
@@ -537,18 +619,30 @@ unsigned int get(t_node * table,
                  char * word)
 {
     unsigned int idx, i = 0;
-    if (table[key].key == NULL || strcmp(table[key].key, word) == 0) {
-        ++(stats.probes[0]);
-        return key;
-    } else
-        do {
-            idx = (++i*i) + key % HASH_TABLE_SIZE;
-            if (table[idx].key == NULL || strcmp(table[idx].key, word) == 0) {
-                ++(stats.probes[i]);
-                return idx;
-            }
-        } while (1);
+    while (1) {
+        idx = (i*i++) + key % HASH_TABLE_SIZE;
+        if (table[idx].key == NULL || strcmp(table[idx].key, word) == 0) {
+            ++(stats.probes[i-1]);
+            return idx;
+        }
+    }
 }
+
+/* Linear probing
+unsigned int get(t_node * table,
+                 unsigned int key,
+                 char * word)
+{
+    unsigned int idx, i = 0;
+    while (1) {
+        idx = (i++) + key % HASH_TABLE_SIZE;
+        if (table[idx].key == NULL || strcmp(table[idx].key, word) == 0) {
+            ++(stats.probes[i-1]);
+            return idx;
+        }
+    }
+}
+*/
 
 /* ==================================================================== *
  *  putIncrement:                                                       *
