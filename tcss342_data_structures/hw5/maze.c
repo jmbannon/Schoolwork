@@ -8,17 +8,30 @@
 
 static unsigned int len;
 static unsigned int wid;
+static unsigned int maze_size;
 static char * maze;
-                     
+static char wall = 88;
+static int debug;
+ 
+int isDigit(const char * str
+) {
+    long int ret = strtol(str, NULL, 10);
+    if (ret <= 0)
+        return 0;
+    else
+        return (int)ret;
+}
+                    
 static void set_blank_board(
 ) {
     unsigned int i, j;
-    maze = malloc(1 + len * (wid + 1) * sizeof(char));
+    maze_size = 1 + len * (wid + 1);
+    maze = malloc(maze_size * sizeof(char));
 
     for (i = 0; i < len; i++) {
         for (j = 0; j < wid; j++) {
             if (i % 2 == 0 || i == len-1 || j % 2 == 0 || j == wid-1)
-                maze[get_idx(i, j)] = 'X';
+                maze[get_idx(i, j)] = wall;
             else
                 maze[get_idx(i, j)] = ' ';
         }
@@ -49,19 +62,19 @@ static unsigned traverse(unsigned int idx
     unsigned int south_idx = get_idx(pos_len + 1, pos_wid);
     unsigned int south_pos = get_idx(pos_len + 2, pos_wid);
 
-    if (pos_len != 1 && maze[north_idx] == 'X' && maze[north_pos] != '.') {
+    if (pos_len != 1 && maze[north_idx] == wall && maze[north_pos] != '.') {
         routes[route_count++] = north_idx;
         routes[route_count++] = north_pos;
     }
-    if (pos_wid != wid-2 && maze[east_idx] == 'X' && maze[east_pos] != '.') {
+    if (pos_wid != wid-2 && maze[east_idx] == wall && maze[east_pos] != '.') {
         routes[route_count++] = east_idx;
         routes[route_count++] = east_pos;
     }
-    if (pos_len != len-2 && maze[south_idx] == 'X' && maze[south_pos] != '.') {
+    if (pos_len != len-2 && maze[south_idx] == wall && maze[south_pos] != '.') {
         routes[route_count++] = south_idx;
         routes[route_count++] = south_pos;
     }
-    if (pos_wid != 1 && maze[west_idx] == 'X' && maze[west_pos] != '.') {
+    if (pos_wid != 1 && maze[west_idx] == wall && maze[west_pos] != '.') {
         routes[route_count++] = west_idx;
         routes[route_count++] = west_pos;
     }
@@ -105,19 +118,28 @@ static void traverse_maze(
                 path = get_path(route_stack, stack_size);
                 path_size = stack_size;
             }
+            if (debug)
+                printf("%s\n", maze);
         } else
             route_stack[stack_size] = route_stack[--stack_size];
     }
-    for (i = 0; i < path_size; i++)
-        maze[path[i]] = '\'';
+    if (debug)
+        for (i = 0; i < path_size; i++)
+            maze[path[i]] = '\'';
+    else
+        for (i = 0; i < maze_size; i++)
+            if (maze[i] == '.')
+                maze[i] = ' ';
 }
 
 void generate_maze(unsigned int length,
-                   unsigned int width 
+                   unsigned int width,
+                   int debug_mode
 ) {
     srand(time(NULL));
     len = length % 2 == 0 ? length + 1 : length;
     wid = width % 2 == 0 ? width + 1 : width;
+    debug = debug_mode;
     set_blank_board();
     traverse_maze();
     printf("%s", maze);
