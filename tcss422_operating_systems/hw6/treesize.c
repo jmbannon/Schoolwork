@@ -56,6 +56,7 @@ void print_directory(const char * path,
                                     dir_element->d_name);
         free(file_name);
     }
+    // Prints the current directory and its total sum
     printf("%12llu %s\n", local_sum, path);
     closedir(dir_p);
 }
