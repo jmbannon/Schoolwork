@@ -1,3 +1,15 @@
+/*
+ ====================================================================
+ Author:    Jesse Bannon
+ Date:      06/01/15
+ Class:     TCSS 342: Data Structures
+ School:    University of Washington Tacoma
+ Desc:      Uses simple recursive graph algorithm to generate a
+            random maze.
+ Copyright: Use for educational purposes only.
+ ====================================================================
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -6,14 +18,16 @@
 #define get_len(idx) ((idx) / ((wid) + 1))
 #define get_wid(idx) ((idx) % ((wid) + 1))
 
+/* Maze dependant variables */
 static unsigned int len;
 static unsigned int wid;
 static unsigned int maze_size;
 static char * maze;
 static char wall = 88;
 static int debug;
- 
-int isDigit(const char * str
+
+/* Returns whether the string is a positive integer */ 
+int is_digit(const char * str
 ) {
     long int ret = strtol(str, NULL, 10);
     if (ret <= 0)
@@ -21,7 +35,8 @@ int isDigit(const char * str
     else
         return (int)ret;
 }
-                    
+
+/* Sets a blank board of the given dimensions to all walls */                   
 static void set_blank_board(
 ) {
     unsigned int i, j;
@@ -43,6 +58,14 @@ static void set_blank_board(
     maze[get_idx(len-2, wid-1)] = ' ';
 }
 
+/* Checks the maze at the given position and sees which of the four directions
+ * it can move to. Then chooses randomly between the possible directions and
+ * tears the wall down between those two positions.
+ *
+ * A position is valid if
+ * 1) The path has not traveled to the position
+ * 2) It is within the bounds of the board
+ */
 static unsigned traverse(unsigned int idx
 ) {
     unsigned int routes[6];
@@ -88,6 +111,9 @@ static unsigned traverse(unsigned int idx
     return routes[rand_idx*2+1];
 }
 
+/* Returns the path from start to finish. Used when the path reaches the end
+ * position.
+ */
 static int * get_path(unsigned int * route_stack,
                       unsigned int stack_size
 ) {
@@ -98,6 +124,12 @@ static int * get_path(unsigned int * route_stack,
     return path;
 }
 
+/* Traverses the maze until every possible position is filled. Uses a recursive
+ * algorithm and a stack to generate a path. If there are no possible positions
+ * it reverts back to the previos position in the stack and sees if a possible
+ * path is present. Repeats this until the stack is entirely empty; meaning the
+ * entire maze board has been traversed.
+ */
 static void traverse_maze(
 ) {
     unsigned int i;
@@ -132,6 +164,7 @@ static void traverse_maze(
                 maze[i] = ' ';
 }
 
+/* Generates a maze of the given dimensions. Optional debugging mode. */
 void generate_maze(unsigned int length,
                    unsigned int width,
                    int debug_mode

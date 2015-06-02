@@ -1,3 +1,15 @@
+/*
+ ====================================================================
+ Author:    Jesse Bannon
+ Date:      06/01/15
+ Class:     TCSS 342: Data Structures
+ School:    University of Washington Tacoma
+ Desc:      Uses simple recursive graph algorithm to generate a
+            random maze.
+ Copyright: Use for educational purposes only.
+ ====================================================================
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "maze.h"
@@ -15,8 +27,8 @@ int main(int argc,
     if (argc != 4)
         print_commands();
     else {
-        len = isDigit(argv[2]);
-        wid = isDigit(argv[3]);
+        len = is_digit(argv[2]);
+        wid = is_digit(argv[3]);
         if (len != 0 && wid != 0)
         {
             if (argv[1][0] == 'p')
