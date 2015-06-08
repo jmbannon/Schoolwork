@@ -84,7 +84,7 @@ tree_t ** mergeSort(tree_t ** tree_a,
 
 /* Priority Queue Functions */
 tree_t * getMin(tree_t ** tree_a,
-                size_t * size);
+                int * size);
 
 void priorityAdd(tree_t ** tree_array,
                  tree_t * element, 
@@ -484,7 +484,7 @@ tree_t** mergeSort(tree_t** tree_a,
  *  invariant is met.                                                   *
  * ==================================================================== */
 tree_t * getMin(tree_t ** tree_a,
-                size_t * size)
+                int * size)
 {
     tree_t * toReturn = tree_a[0];
     tree_a[0] = tree_a[--(*size)];
