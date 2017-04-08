@@ -68,6 +68,7 @@ IsDag <- function(A)
   return(isDag)
 }
 
+# Includes paths of length zero
 TotalPaths <- function(A)
 {
   if (!IsDag(A)) {
@@ -84,6 +85,27 @@ TotalPaths <- function(A)
   }
   
   return(totalPaths)
+}
+
+TotalPathsTest <- function()
+{
+  # Reverse diag matrix
+  m1 <- apply(diag(5), 2, rev)
+  
+  # All possible paths
+  m2 <- matrix(1, 5, 5)
+  
+  # Should contain 5 paths
+  m3 <- matrix(0, 5, 5)
+  m3[1, 5] <- 1
+  m3[3, 5] <- 1
+  m3[5, 2] <- 1
+  
+  test1 <- TotalPaths(m1) == Inf
+  test2 <- TotalPaths(m2) == Inf
+  test3 <- TotalPaths(m3) == 5
+  
+  return(test1 && test2 && test3)
 }
 
 ####################################################
@@ -189,6 +211,6 @@ printTestResult <- function(testName, testResult) {
   cat(sprintf("%s: %s\n", testName, output))
 }
 
-printTestResult("TriangleAreaTest", TriangleAreaTest())
-printTestResult("FindSimilarityTest", FindSimilarityTest())
-cat("Sorry, no adjacency matrix provided to test TotalPaths :)")
+printTestResult("TriangleArea Test", TriangleAreaTest())
+printTestResult("TotalPaths Test", TotalPathsTest())
+printTestResult("FindSimilarity Test", FindSimilarityTest())
