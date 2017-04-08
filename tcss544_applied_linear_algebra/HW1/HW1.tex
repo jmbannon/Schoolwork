@@ -1,0 +1,75 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[thmmarks,  thref, amsmath]{ntheorem}
+
+\theoremstyle{plain}
+        \newtheorem{theorem}{Theorem}
+
+        \theoremheaderfont{\itshape}
+        \theorembodyfont{\upshape}
+        \newtheorem{case}{Case}
+
+        \theoremstyle{nonumberplain}
+        \theoremheaderfont{\scshape}
+        \theorembodyfont{\upshape}
+        \theoremsymbol{\scshape Q. E. D.}%\ensuremath{ _{\box}}
+        \theorempostwork{\setcounter{case}{0}}
+        \newtheorem{proof}{Proof}
+
+\title{Applied Linear Algebra Homework One}
+\date{2017-04-07}
+\author{Jesse Bannon}
+
+\begin{document}
+\maketitle
+  \section{Matrices Excersize}
+  
+  \begin{theorem}
+  Let $A$ be an adjacency matrix for a graph $G$. $A_{i,j}^p$ represents the number of walks of length $p$ from vertex $i$ to $j$, $i, j \in G$.
+  \end{theorem}
+  
+  \begin{proof}
+        We prove that an adjecency matrix $A$ for a graph $G$ is nilpotent if and only if $G$ is a directed acylic graph using a case proof that considers all possible graphs.
+        \begin{case}
+        	$A = 0$ \\
+        	
+        	We can consider $G$ to be a DAG since $G$ has no cycles, and $A^p = 0$ for $p > 0$.
+        	
+        	Thus $A$ is nilpotent and $G$ is a DAG.
+        \end{case}
+        
+        \begin{case}
+        	$G$ contains a cycle \\
+        	
+        	Using \textbf{Theorom 1}, we know that $A^p \neq 0$ for $p > 0$. \\
+
+        	Let $C$ be the transitive closure from vertex $i$ to $i$, where $i \in G$ has a cycle.
+        	
+			There exists a walk of $p$ steps from vertex $i$ to some vertex $j \in C$ for $p > 0$. \\
+
+        	Thus, $\exists A_{i,j}^p \in A^p \to A_{i,j}^p > 0$ for $p > 0$. 
+        	
+        	Thus $A$ is not nilpotent and $G$ is not a DAG.
+        \end{case}
+        
+        \begin{case}
+        $G$ contains no cycles \\
+        
+        Using \textbf{Theorom 1}, we know that $A^p = 0$ for some $p > 0$.
+        
+        Let $n = |V(G)|$ \\
+        
+        Since there are no cycles, $G$ is considered a DAG. The largest path from 
+        
+        any vertex $i \in G$ can only contain every other vertex $\in G$. Thus, the largest 
+        
+        possible number of walks for any path $\in G$ can only be $n-1$. \\
+        
+        Thus, $A^n = 0$, making $A$ nilpotent. $A$ is always nilpotent if $G$ is a DAG.
+        \end{case}
+   \end{proof}
+    Thus, $A$ is nilpotent if and only if $G$ is a DAG. We can also conclude that the smallest value of $p$ for which $A^p = 0$ indicates that the largest path $\in G$ contains $p - 1$ vertices.
+\end{document}
