@@ -1,7 +1,7 @@
 ####################################################
 # Jesse Bannon
 # 2017-04-23
-# Applied Linear Algebra HW2
+# Applied Linear Algebra HW3
 ####################################################
 
 # Let G be an adjacency matrix of hyperlinks
