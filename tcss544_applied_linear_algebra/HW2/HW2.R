@@ -18,9 +18,6 @@ page_rank <- function(G, p) {
   # number of links on j
   col_sums <- colSums(G)
   
-  # number of links to i
-  row_sums <- rowSums(G)
-  
   # Let A be an n x n matrix whose elements are
   # a_ij = { p * g_ij / c_j + delta : c_j != 0 }
   #        { 1/n                    : c_j == 0 }
@@ -131,3 +128,78 @@ excercise_7b <- function() {
 excercise_7c <- function() {
   return(page_rank(excercise_7a(), 0.99999))
 }
+
+####################################################
+# Excercise 7.8
+####################################################
+
+# Maybe 1/2 a point for my final grade? :)
+power_iter_page_rank <- function(G, p, epsilon) {
+  n <- nrow(G)
+  A <- (1 - p) / n
+  delta <- (1 - p) / n
+  indices <- vector("list", n)
+  col_sums <- vector(mode = "double", length = n)
+  
+  for (j in 1:n) {
+    indices[[j]] <- which(G[,j] == 1)
+    col_sums[j] <- length(indices[[j]])
+  }
+  
+  x <- rep(1/n, n)
+  z <- rep(0, n)
+  
+  while(max(abs(x - z)) > epsilon) {
+    z <- x
+    x <- rep(0, n)
+    
+    for (j in 1:n) {
+      if (col_sums[j] == 0) {
+        x <- x + z[j] / n
+      } else {
+        x[indices[[j]]] <- x[indices[[j]]] + z[j] / col_sums[j]
+      }
+    }
+    x <- p*x + delta
+  }
+  
+  return(x)
+}
+
+####################################################
+# TEST
+####################################################
+
+page_rank_test <- function() {
+  moler_example <- t(matrix(c(0, 0, 0, 1, 0, 1,
+                              1, 0, 0, 0, 0, 0,
+                              0, 1, 0, 0, 0, 0,
+                              0, 1, 1, 0, 0, 0,
+                              0, 0, 1, 0, 0, 0,
+                              1, 0, 1, 0, 0, 0), 6, 6))
+  output <- page_rank(moler_example, 0.85)
+  expectedOutput <- c(.3210, .1705, .1066, .1368, .0643, .2007)
+  
+  return(max(abs(output - expectedOutput)) < .001)
+}
+
+power_iter_page_rank_test <- function() {
+  moler_example <- t(matrix(c(0, 0, 0, 1, 0, 1,
+                              1, 0, 0, 0, 0, 0,
+                              0, 1, 0, 0, 0, 0,
+                              0, 1, 1, 0, 0, 0,
+                              0, 0, 1, 0, 0, 0,
+                              1, 0, 1, 0, 0, 0), 6, 6))
+  output <- power_iter_page_rank(moler_example, 0.85, .0001)
+  expectedOutput <- c(.3210, .1705, .1066, .1368, .0643, .2007)
+  
+  return(max(abs(output - expectedOutput)) < .001)
+}
+
+printTestResult <- function(testName, testResult) {
+  output <- if (testResult) "PASS" else "FAIL"
+  cat(sprintf("%s: %s\n", testName, output))
+}
+
+printTestResult("Page Rank Test", page_rank_test())
+printTestResult("Power Iter Page Rank Test", power_iter_page_rank_test())
