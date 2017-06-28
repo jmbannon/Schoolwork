@@ -42,6 +42,15 @@ int DenseMatrix_parse_mm_dense(DenseMatrix *m, FILE *file) {
 	ERROR("Parsing dense mm matrices is not supported");
 }
 
+/**
+ * Reads sparse mm file into a DenseMatrix
+ *
+ * @param m Initialized matrix
+ * @param file Sparse mm file
+ * @param nr_sparse_elements Total number of elements in the sparse mm file
+ *
+ * @see http://math.nist.gov/MatrixMarket/mmio/c/example_read.c
+ */
 int DenseMatrix_parse_mm_sparse(DenseMatrix *m, FILE *file, int nr_sparse_elements) {
 	int res = 0;
 
@@ -57,7 +66,8 @@ int DenseMatrix_parse_mm_sparse(DenseMatrix *m, FILE *file, int nr_sparse_elemen
 			res = fscanf(file, "%d %d %lf\n", &row, &col, &val);
 		#endif
 		if (res == 3) {
-			m->data[IDX2RM(row, col, m->nr_cols)] = val;
+			// Adjust from 1-based to 0-based
+			m->data[IDX2RM(row - 1, col - 1, m->nr_cols)] = val;
 			i++;
 		}
 	}

@@ -1,33 +1,87 @@
 /* 
-Fri Aug 15 16:29:47 EDT 1997
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    Matrix Market I/O library for ANSI C
-    Roldan Pozo, NIST (pozo@nist.gov)
- 
-    See http://math.nist.gov/MatrixMarket for details and sample
-    calling programs.
- 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                NOTICE
-
- Permission to use, copy, modify, and distribute this software and
- its documentation for any purpose and without fee is hereby granted
- provided that the above copyright notice appear in all copies and
- that both the copyright notice and this permission notice appear in
- supporting documentation.
-
- Neither the Author nor the Institution (National Institute of Standards
- and Technology) make any representations about the suitability of this 
- software for any purpose. This software is provided "as is" without 
- expressed or implied warranty.
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*   Matrix Market I/O library for ANSI C
+*
+*   See http://math.nist.gov/MatrixMarket for details.
+*
+*
 */
+
+
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #include "mmio.h"
+
+int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
+                double **val_, int **I_, int **J_)
+{
+    FILE *f;
+    MM_typecode matcode;
+    int M, N, nz;
+    int i;
+    double *val;
+    int *I, *J;
+ 
+    if ((f = fopen(fname, "r")) == NULL)
+            return -1;
+ 
+ 
+    if (mm_read_banner(f, &matcode) != 0)
+    {
+        printf("mm_read_unsymetric: Could not process Matrix Market banner ");
+        printf(" in file [%s]\n", fname);
+        return -1;
+    }
+ 
+ 
+ 
+    if ( !(mm_is_real(matcode) && mm_is_matrix(matcode) &&
+            mm_is_sparse(matcode)))
+    {
+        fprintf(stderr, "Sorry, this application does not support ");
+        fprintf(stderr, "Market Market type: [%s]\n",
+                mm_typecode_to_str(matcode));
+        return -1;
+    }
+ 
+    /* find out size of sparse matrix: M, N, nz .... */
+ 
+    if (mm_read_mtx_crd_size(f, &M, &N, &nz) !=0)
+    {
+        fprintf(stderr, "read_unsymmetric_sparse(): could not parse matrix size.\n");
+        return -1;
+    }
+ 
+    *M_ = M;
+    *N_ = N;
+    *nz_ = nz;
+ 
+    /* reseve memory for matrices */
+ 
+    I = (int *) malloc(nz * sizeof(int));
+    J = (int *) malloc(nz * sizeof(int));
+    val = (double *) malloc(nz * sizeof(double));
+ 
+    *val_ = val;
+    *I_ = I;
+    *J_ = J;
+ 
+    /* NOTE: when reading in doubles, ANSI C requires the use of the "l"  */
+    /*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
+    /*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            */
+ 
+    for (i=0; i<nz; i++)
+    {
+        fscanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
+        I[i]--;  /* adjust from 1-based to 0-based */
+        J[i]--;
+    }
+    fclose(f);
+ 
+    return 0;
+}
 
 int mm_is_valid(MM_typecode matcode)
 {
@@ -59,10 +113,10 @@ int mm_read_banner(FILE *f, MM_typecode *matcode)
         storage_scheme) != 5)
         return MM_PREMATURE_EOF;
 
-    for (p=mtx; *p!='\0'; *p=toupper(*p),p++);  /* convert to upper case */
-    for (p=crd; *p!='\0'; *p=toupper(*p),p++);  
-    for (p=data_type; *p!='\0'; *p=toupper(*p),p++);
-    for (p=storage_scheme; *p!='\0'; *p=toupper(*p),p++);
+    for (p=mtx; *p!='\0'; *p=tolower(*p),p++);  /* convert to lower case */
+    for (p=crd; *p!='\0'; *p=tolower(*p),p++);  
+    for (p=data_type; *p!='\0'; *p=tolower(*p),p++);
+    for (p=storage_scheme; *p!='\0'; *p=tolower(*p),p++);
 
     /* check for banner */
     if (strncmp(banner, MatrixMarketBanner, strlen(MatrixMarketBanner)) != 0)
@@ -70,7 +124,7 @@ int mm_read_banner(FILE *f, MM_typecode *matcode)
 
     /* first field should be "mtx" */
     if (strcmp(mtx, MM_MTX_STR) != 0)
-        return  MM_NOT_MTX;
+        return  MM_UNSUPPORTED_TYPE;
     mm_set_matrix(matcode);
 
 
@@ -167,10 +221,9 @@ int mm_read_mtx_array_size(FILE *f, int *M, int *N)
 {
     char line[MM_MAX_LINE_LENGTH];
     int num_items_read;
-
     /* set return null parameter values, in case we exit with errors */
     *M = *N = 0;
-
+    
     /* now continue scanning until you reach the end-of-comments */
     do 
     {
@@ -333,10 +386,14 @@ int mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int **I, int **J,
 int mm_write_banner(FILE *f, MM_typecode matcode)
 {
     char *str = mm_typecode_to_str(matcode);
+    int ret_code;
 
-    fprintf(f, "%s ", MatrixMarketBanner);
-    fprintf(f, "%s\n", str);
+    ret_code = fprintf(f, "%s %s\n", MatrixMarketBanner, str);
     free(str);
+    if (ret_code !=2 )
+        return MM_COULD_NOT_WRITE_FILE;
+    else
+        return 0;
 }
 
 int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
@@ -381,12 +438,25 @@ int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
 
     return 0;
 }
-    
+  
+
+/**
+*  Create a new copy of a string s.  mm_strdup() is a common routine, but
+*  not part of ANSI C, so it is included here.  Used by mm_typecode_to_str().
+*
+*/
+char *mm_strdup(const char *s)
+{
+    int len = strlen(s);
+    char *s2 = (char *) malloc((len+1)*sizeof(char));
+    return strcpy(s2, s);
+}
 
 char  *mm_typecode_to_str(MM_typecode matcode)
 {
     char buffer[MM_MAX_LINE_LENGTH];
     char *types[4];
+    char *mm_strdup(const char *);
     int error =0;
 
     /* check for MTX type */
@@ -436,6 +506,6 @@ char  *mm_typecode_to_str(MM_typecode matcode)
         return NULL;
 
     sprintf(buffer,"%s %s %s %s", types[0], types[1], types[2], types[3]);
-    return strdup(buffer);
+    return mm_strdup(buffer);
 
 }
