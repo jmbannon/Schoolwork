@@ -2,12 +2,15 @@
 PTHREAD_EXEC = multiply_pthread
 CC    = gcc
 
-FLAGS = -fopenmp
+LIBS = -fopenmp
+INCL = -I./include/iohb1.0
+
+FLAGS = ${LIBS} ${INCL}
 
 PTHREAD_SRC = $(wildcard src/pthreads/*.c)
 SHARED_SRC  = $(wildcard src/shared/*.c)
 
-all: pthread_compile pthread_link clean
+pthread: shared_compile pthread_compile pthread_link clean
 
 pthread_link:
 	${CC} -o ${PTHREAD_EXEC} *.o
@@ -19,4 +22,4 @@ pthread_compile:
 	${CC} ${FLAGS} -c ${PTHREAD_SRC}
 
 clean:
-	rm *.o
+	rm -f *.o
