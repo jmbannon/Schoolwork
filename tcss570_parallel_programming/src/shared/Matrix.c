@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <errno.h>
 #include "Matrix.h"
 #include "error.h"
@@ -36,6 +37,60 @@ int DenseMatrix_init(DenseMatrix *m, int nr_rows, int nr_cols) {
 	m->nr_cols = nr_cols;
 
 	return DenseMatrix_init_mem(m);
+}
+
+int DenseMatrix_init_zero(DenseMatrix *m, int nr_rows, int nr_cols) {
+	m->nr_rows = nr_rows;
+	m->nr_cols = nr_cols;
+
+	return DenseMatrix_init_mem_zero(m);
+}
+
+int DenseMatrix_init_diag(DenseMatrix *m, int nr_rows, int nr_cols, Numeric val) {
+	int res;
+
+	res = DenseMatrix_init_zero(m, nr_rows, nr_cols);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to init zero matrix");
+
+	int min = nr_rows < nr_cols ? nr_rows : nr_cols;
+
+	for (int i = 0; i < min; i++) {
+		printf("%d,%d = %d\n", i, i , IDX2RM(i, i, nr_cols));
+		m->data[IDX2RM(i, i, nr_cols)] = val;
+	}
+	return 0;
+}
+
+int DenseMatrix_init_identity(DenseMatrix *m, int nr_rows, int nr_cols) {
+	return DenseMatrix_init_diag(m, nr_rows, nr_cols, 1.0);
+}
+
+static
+int DenseMatrix_init_seq(DenseMatrix *m, int nr_rows, int nr_cols, bool row) {
+	int res;
+
+	res = DenseMatrix_init(m, nr_rows, nr_cols);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix");
+
+	int i;
+	int j;
+	int *seq_ptr = row ? &i : &j;
+
+	for (i = 0; i < nr_rows; i++) {
+		for (j = 0; j < nr_cols; j++) {
+			m->data[IDX2RM(i, j, nr_cols)] = (Numeric)*seq_ptr; 
+		}
+	}
+
+	return 0;
+}
+
+int DenseMatrix_init_seq_row(DenseMatrix *m, int nr_rows, int nr_cols) {
+	return DenseMatrix_init_seq(m, nr_rows, nr_cols, true);
+}
+
+int DenseMatrix_init_seq_col(DenseMatrix *m, int nr_rows, int nr_cols) {
+	return DenseMatrix_init_seq(m, nr_rows, nr_cols, false);
 }
 
 int DenseMatrix_parse_mm_dense(DenseMatrix *m, FILE *file) {
