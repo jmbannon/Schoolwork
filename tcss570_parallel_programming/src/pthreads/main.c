@@ -12,7 +12,6 @@ int main(int argc, char **argv) {
 	res = DenseMatrix_mm_read(&b, argv[2]);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to read DenseMatrix b");
 
-	DenseMatrix_print(&a);
-
+	printf("Read %s and %s successfully\n", argv[1], argv[2]);
 	return 0;
 }
