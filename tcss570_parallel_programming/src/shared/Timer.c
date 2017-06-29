@@ -4,17 +4,23 @@
 void
 Timer_start(Timer *timer)
 {
-    timer->start = clock();
+    clock_gettime(CLOCK_MONOTONIC, &timer->start);
 }
 
 void
 Timer_end(Timer *timer)
 {
-    timer->end = clock();
+    clock_gettime(CLOCK_MONOTONIC, &timer->end);
+}
+
+double
+Timer_dur_ms(Timer *timer)
+{
+    return ((timer->end.tv_nsec - timer->start.tv_nsec) / 1e6) + ((timer->end.tv_sec - timer->start.tv_sec) * 1e3);
 }
 
 double
 Timer_dur_sec(Timer *timer)
 {
-    return (double)(timer->end - timer->start) / (double)CLOCKS_PER_SEC;
+    return Timer_dur_ms(timer) / 1e3;
 }

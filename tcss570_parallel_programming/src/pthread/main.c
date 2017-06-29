@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "../shared/Matrix.h"
 #include "../shared/error.h"
 #include "../shared/DenseMatrixOperations.h"
@@ -8,6 +9,8 @@ int main(int argc, char **argv) {
 	int res;
 	DenseMatrix a, b, c;
 	Timer t;
+
+	int nr_threads = atoi(argv[3]);
 
 	res = DenseMatrix_mm_read(&a, argv[1]);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to read DenseMatrix a");
@@ -20,12 +23,13 @@ int main(int argc, char **argv) {
 
 
 	Timer_start(&t);
-	res = DenseMatrix_st_mult(&a, &b, &c);
+	res = DenseMatrix_mt_mult(&a, &b, &c, nr_threads);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply ab = c");
 	Timer_end(&t);
 
 	printf("Successfully multiplied %s (%d-by-%d) and %s (%d-by-%d).\n", argv[1], a.nr_rows, a.nr_cols, argv[2], b.nr_rows, b.nr_cols);
-	printf("Duration: %lf ms", Timer_dur_sec(&t));
+	printf("Duration: %lf sec\n", Timer_dur_sec(&t));
+	printf("Thread Count: %d\n", nr_threads);
 
 	return 0;
 }

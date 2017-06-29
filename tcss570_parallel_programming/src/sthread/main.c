@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	Timer_end(&t);
 
 	printf("Successfully multiplied %s (%d-by-%d) and %s (%d-by-%d).\n", argv[1], a.nr_rows, a.nr_cols, argv[2], b.nr_rows, b.nr_cols);
-	printf("Duration: %lf ms", Timer_dur_sec(&t));
+	printf("Duration: %lf sec\n", Timer_dur_sec(&t));
 
 	return 0;
 }

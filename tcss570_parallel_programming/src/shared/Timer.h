@@ -4,8 +4,8 @@
 #define TIMER_H_
 
 typedef struct _Timer {
-    clock_t start;
-    clock_t end;
+    struct timespec start;
+    struct timespec end;
 } Timer;
 
 void
@@ -16,5 +16,8 @@ Timer_end(Timer *timer);
 
 double
 Timer_dur_sec(Timer *timer);
+
+double
+Timer_dur_ms(Timer *timer);
 
 #endif

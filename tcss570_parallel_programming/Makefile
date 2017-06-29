@@ -3,7 +3,7 @@ STHREAD_EXEC = multiply_sthread
 PTHREAD_EXEC = multiply_pthread
 CC    = gcc
 
-LIBS = -fopenmp
+LIBS = -fopenmp -lpthread
 INCL = -I./include/iohb1.0 -L./include/iohb1.0
 
 FLAGS = ${LIBS} ${INCL}
@@ -15,10 +15,10 @@ SHARED_SRC  = $(wildcard src/shared/*.c)
 all: sthread sthread_clean pthread pthread_clean clean_objs
 
 sthread: sthread_compile
-	${CC} -o ${STHREAD_EXEC} *.o ./include/iohb1.0/mmio.o
+	${CC} ${FLAGS} -o ${STHREAD_EXEC} *.o ./include/iohb1.0/mmio.o
 
 pthread: pthread_compile
-	${CC} -o ${PTHREAD_EXEC} *.o ./include/iohb1.0/mmio.o
+	${CC} ${FLAGS} -o ${PTHREAD_EXEC} *.o ./include/iohb1.0/mmio.o
 
 sthread_compile:
 	${CC} ${FLAGS} -c ${STHREAD_SRC} ${SHARED_SRC}
