@@ -1,4 +1,5 @@
 
+STHREAD_EXEC = multiply_sthread
 PTHREAD_EXEC = multiply_pthread
 CC    = gcc
 
@@ -7,19 +8,32 @@ INCL = -I./include/iohb1.0 -L./include/iohb1.0
 
 FLAGS = ${LIBS} ${INCL}
 
-PTHREAD_SRC = $(wildcard src/pthreads/*.c)
+STHREAD_SRC = $(wildcard src/sthread/*.c)
+PTHREAD_SRC = $(wildcard src/pthread/*.c)
 SHARED_SRC  = $(wildcard src/shared/*.c)
 
-pthread: shared_compile pthread_compile pthread_link clean
+all: sthread sthread_clean pthread pthread_clean clean_objs
 
-pthread_link:
+sthread: sthread_compile
+	${CC} -o ${STHREAD_EXEC} *.o ./include/iohb1.0/mmio.o
+
+pthread: pthread_compile
 	${CC} -o ${PTHREAD_EXEC} *.o ./include/iohb1.0/mmio.o
 
-shared_compile:
-	${CC} ${FLAGS} -c ${SHARED_SRC}
+sthread_compile:
+	${CC} ${FLAGS} -c ${STHREAD_SRC} ${SHARED_SRC}
 
 pthread_compile:
-	${CC} ${FLAGS} -c ${PTHREAD_SRC}
+	${CC} ${FLAGS} -c ${PTHREAD_SRC} ${SHARED_SRC}
+
+sthread_clean:
+	rm -f main.o
+
+pthread_clean:
+	rm -f main.o
+
+clean_objs:
+	rm -f *.o
 
 clean:
-	rm -f *.o
+	rm -f *.o ${STHREAD_EXEC} ${PTHREAD_EXEC}
