@@ -142,28 +142,73 @@ int DenseMatrix_mt_mult(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int nr_t
 // Matrix-Add multi-thread
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// void * DenseMatrix_mt_add_wrapper(void *info) {
-// 	PThreadMultInfo *minfo = (PThreadMultInfo *)info;
-// 	DenseMatrix_add(minfo->a, minfo->lda, minfo->b, minfo->ldb, minfo->c, minfo->ldc);
-// 	return NULL;
-// }
+void * DenseMatrix_mt_add_wrapper(void *info) {
+	PThreadMultInfo *minfo = (PThreadMultInfo *)info;
+	DenseMatrix_add(minfo->a, minfo->lda, minfo->b, minfo->ldb, minfo->c, minfo->ldc);
+	return NULL;
+}
 
-// /**
-//  * DenseMatrix multi-threaded add with leading dimensions
-//  */
-// int DenseMatrix_mt_add_ld(DenseMatrix *a, int lda,
-// 	                       DenseMatrix *b, int ldb,
-// 	                       DenseMatrix *c, int ldc,
-// 	                       int nr_threads) {
-// 	return DenseMatrix_mt_op(a, lda, b, ldb, c, ldc, nr_threads, DenseMatrix_mt_add_wrapper);
-// }
+/**
+ * DenseMatrix multi-threaded multiply
+ * Each thread takes a partition of a, b, and c's rows, A_i, B_i, C_i, and performs C_i = A_i + B_i
+ */
+int DenseMatrix_mt_add_ld(DenseMatrix *a, int lda, 
+	                      DenseMatrix *b, int ldb,
+	                      DenseMatrix *c, int ldc,
+	                      int nr_threads) {
+	int res;
+	CHECK_ERROR_RETURN(a->nr_cols != b->nr_cols || a->nr_cols != c->nr_cols || a->nr_rows != b->nr_rows || a->nr_rows != c->nr_rows, "Invalid dimensions for matrix add", 1);
 
-// /**
-//  * DenseMatrix multi-threaded multiply
-//  */
-// int DenseMatrix_mt_add(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int nr_threads) {
-// 	return DenseMatrix_mt_add_ld(a, a->nr_cols, b, b->nr_cols, c, c->nr_cols, nr_threads);
-// }
+	pthread_t thread_ids[nr_threads];
+	DenseMatrix t_a[nr_threads];
+	DenseMatrix t_b[nr_threads];
+	DenseMatrix t_c[nr_threads];
+	PThreadMultInfo info[nr_threads];
+
+	// All dimensions are equal
+	int nr_rows = a->nr_rows;
+	int nr_cols = a->nr_cols;
+
+	int active_nr_threads = 0;
+	int row_offset = 0;
+	int t_nr_rows;
+	for (int i = 0; i < nr_threads; i++) {
+		if (row_offset >= nr_rows) {
+			break;
+		}
+
+		info[i] = (PThreadMultInfo){ .a = &t_a[i], .lda = lda, .b = &t_b[i], .ldb = ldb, .c = &t_c[i], .ldc = ldc };
+
+		t_nr_rows = (a->nr_rows / nr_threads) + (i < a->nr_rows % nr_threads);
+
+		t_a[i] = (DenseMatrix){ .nr_rows = t_nr_rows, .nr_cols = nr_cols, .data = &a->data[IDX2RM(row_offset, 0, lda)] };
+		t_b[i] = (DenseMatrix){ .nr_rows = t_nr_rows, .nr_cols = nr_cols, .data = &b->data[IDX2RM(row_offset, 0, ldb)] };
+		t_c[i] = (DenseMatrix){ .nr_rows = t_nr_rows, .nr_cols = nr_cols, .data = &c->data[IDX2RM(row_offset, 0, ldc)] };
+
+		//printf("thread %d: A[%d:%d,] out of %d\n", i, row_offset, row_offset + t_nr_rows - 1, nr_rows);
+
+		row_offset += t_nr_rows;
+
+		res = pthread_create(&thread_ids[i], NULL, DenseMatrix_mt_add_wrapper, (void *)&info[i]);
+		CHECK_ZERO_ERROR_RETURN(res, "Failed to create pthread");
+
+		++active_nr_threads;
+	}
+
+	for (int i = 0; i < active_nr_threads; i++) {
+		res = pthread_join(thread_ids[i], NULL);
+		CHECK_ZERO_ERROR_RETURN(res, "Failed to join pthread");
+	}
+
+	return 0;
+}
+
+/**
+ * DenseMatrix multi-threaded add
+ */
+int DenseMatrix_mt_add(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int nr_threads) {
+	return DenseMatrix_mt_add_ld(a, a->nr_cols, b, b->nr_cols, c, c->nr_cols, nr_threads);
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Strassen multi-thread
