@@ -175,3 +175,61 @@ int DenseMatrix_mm_read(DenseMatrix *m, char *file_name) {
 	return 0;
 }
 
+/** Returns a = 2^n : max(nr_rows, nr_cols) <= a where n is as small as possible to satisfy the requirement */
+int pow2dim(int nr_rows, int nr_cols) {
+	int max = nr_cols > nr_rows ? nr_cols : nr_rows;
+	int size = 1;
+
+	while (size <= max) {
+		size *= 2;
+	}
+
+	return size;
+}
+
+int DenseMatrix_mm_read_strassen(DenseMatrix *m, char *file_name, int *nr_rows, int *nr_cols) {
+	int res;
+	MM_typecode matcode;
+	FILE *file;
+
+	file = fopen(file_name, "r");
+	CHECK_NULL_RETURN(file);
+
+	res = mm_read_banner(file, &matcode);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to read matrix code");
+
+	CHECK_ERROR_RETURN(!mm_is_matrix(matcode), "File is not a matrix", 1);
+
+	if (mm_is_sparse(matcode)) {
+		int nr_sparse_elements;
+
+		res = mm_read_mtx_crd_size(file, nr_rows, nr_cols, &nr_sparse_elements);
+		CHECK_ZERO_ERROR_RETURN(res, "Failed to read sparse mm dimensions");
+
+		int dim = pow2dim(*nr_rows, *nr_cols);
+
+		// Initialzie matrix to zero to fill in with sparse elements
+		res = DenseMatrix_init_zero(m, dim, dim);
+		CHECK_ZERO_ERROR_RETURN(res, "Failed to allocate memory for mm matrix");
+
+		res = DenseMatrix_parse_mm_sparse(m, file, nr_sparse_elements);
+	} else if (mm_is_dense(matcode)) {
+		res = mm_read_mtx_array_size(file, nr_rows, nr_cols);
+		CHECK_ZERO_ERROR_RETURN(res, "Failed to read dense mm dimensions");
+
+		int dim = pow2dim(*nr_rows, *nr_cols);
+
+		res = DenseMatrix_init(m, dim, dim);
+		CHECK_ZERO_ERROR_RETURN(res, "Failed to allocate memory for mm matrix");
+
+		res = DenseMatrix_parse_mm_dense(m, file);
+	} else {
+		ERROR("mm matrix code is not supported. Only supports dense and sparse matrices");
+	}
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to parse mm file");
+
+	return 0;
+}
+
+
+

@@ -3,6 +3,22 @@
 #include "Matrix.h"
 #include "error.h"
 
+int DenseMatrix_add(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc) {
+	CHECK_ERROR_RETURN(a->nr_cols != b->nr_cols || a->nr_cols != c->nr_cols || a->nr_rows != b->nr_rows || a->nr_rows != c->nr_rows, "Invalid dimensions for matrix add", 1);
+
+	for (int i = 0; i < a->nr_rows; i++) {
+		for (int j = 0; j < a->nr_cols; j++) {
+			c->data[IDX2RM(i, j, ldc)] = a->data[IDX2RM(i, j, lda)] + b->data[IDX2RM(i, j, ldb)];
+		}
+	}
+
+	return 0;
+}
+
+int DenseMatrix_st_add(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c) {
+	return DenseMatrix_add(a, a->nr_cols, b, b->nr_cols, c, c->nr_cols);
+}
+
 int DenseMatrix_mult(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc) {
 	int res;
 	CHECK_ERROR_RETURN(a->nr_cols != b->nr_rows || a->nr_rows != c->nr_rows || b->nr_cols != c->nr_cols, "Invalid dimensions for matrix multiply", 1);
@@ -93,6 +109,54 @@ int DenseMatrix_mt_mult(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int nr_t
 	for (int i = 0; i < active_nr_threads; i++) {
 		res = pthread_join(thread_ids[i], NULL);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to join pthread");
+	}
+
+	return 0;
+}
+
+int DenseMatrix_mt_strassen(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int ld, int nr_threads, int min_dim) {
+	int res;
+	CHECK_ERROR_RETURN(a->nr_cols != b->nr_rows || a->nr_rows != c->nr_rows || b->nr_cols != c->nr_cols, "Invalid dimensions for matrix multiply", 1);
+	CHECK_ERROR_RETURN(a->nr_rows != a->nr_cols || b->nr_rows != b->nr_cols || c->nr_rows != c->nr_cols, "All matrices must be square", 1);
+
+	DenseMatrix a_quad[2][2];
+	DenseMatrix b_quad[2][2];
+	DenseMatrix c_quad[2][2];
+
+	int half_dim = a->nr_rows / 2;
+	int half_idx;
+	for (int x = 0; x < 2; x++) {
+		for (int y = 0; y < 2; y++) {
+			half_idx = IDX2RM(x * half_dim, y * half_dim, ld);
+			a_quad[x][y] = (DenseMatrix){ .nr_rows = half_dim, .nr_cols = half_dim, .data = &a->data[half_idx] };
+			b_quad[x][y] = (DenseMatrix){ .nr_rows = half_dim, .nr_cols = half_dim, .data = &b->data[half_idx] };
+			c_quad[x][y] = (DenseMatrix){ .nr_rows = half_dim, .nr_cols = half_dim, .data = &c->data[half_idx] };
+
+			if (half_dim == min_dim) {
+				res = DenseMatrix_mt_strassen(&a_quad[x][y], &b_quad[x][y], &c_quad[x][y], ld, nr_threads, min_dim);
+				CHECK_ZERO_ERROR_RETURN(res, "Recursive strassen call failed");
+			}
+		}
+	}
+
+	DenseMatrix t1, t2;
+	res = DenseMatrix_init(&t1, half_dim, half_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to init t1");
+
+	res = DenseMatrix_init(&t2, half_dim, half_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to init t1");
+
+	for (int x = 0; x < 2; x++) {
+		for (int y = 0; y < 2; y++) {
+			res = DenseMatrix_mult(&a_quad[x][0], ld, &b_quad[0][y], ld, &t1, half_dim);
+			CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply");
+
+			res = DenseMatrix_mult(&a_quad[x][1], ld, &b_quad[1][y], ld, &t2, half_dim);
+			CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply");
+
+			res = DenseMatrix_add(&t1, half_dim, &t2, half_dim, &c_quad[x][y], ld);
+			CHECK_ZERO_ERROR_RETURN(res, "Failed to add");
+		}
 	}
 
 	return 0;
