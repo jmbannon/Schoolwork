@@ -238,7 +238,7 @@ int DenseMatrix_mt_add(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int nr_th
 // Strassen multi-thread
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int DenseMatrix_mt_strassen(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int ld, int nr_threads, int min_dim) {
+int DenseMatrix_mt_strassen2(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int ld, int nr_threads, int min_dim) {
 	int res;
 	CHECK_ERROR_RETURN(a->nr_cols != b->nr_rows || a->nr_rows != c->nr_rows || b->nr_cols != c->nr_cols, "Invalid dimensions for matrix multiply", 1);
 	CHECK_ERROR_RETURN(a->nr_rows != a->nr_cols || b->nr_rows != b->nr_cols || c->nr_rows != c->nr_cols, "All matrices must be square", 1);
@@ -257,7 +257,7 @@ int DenseMatrix_mt_strassen(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int 
 			c_quad[x][y] = (DenseMatrix){ .nr_rows = half_dim, .nr_cols = half_dim, .data = &c->data[half_idx] };
 
 			if (half_dim == min_dim) {
-				res = DenseMatrix_mt_strassen(&a_quad[x][y], &b_quad[x][y], &c_quad[x][y], ld, nr_threads, min_dim);
+				res = DenseMatrix_mt_strassen2(&a_quad[x][y], &b_quad[x][y], &c_quad[x][y], ld, nr_threads, min_dim);
 				CHECK_ZERO_ERROR_RETURN(res, "Recursive strassen call failed");
 			}
 		}
@@ -293,7 +293,7 @@ int DenseMatrix_mt_mult_ss(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, Den
 	return DenseMatrix_mt_mult_ld(a, lda, b, ldb, c, ldc, nr_threads);
 }
 
-int DenseMatrix_mt_strassen2(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc, int nr_threads, int min_dim) {
+int DenseMatrix_mt_strassen(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc, int nr_threads, int min_dim) {
 	int res;
 	CHECK_ERROR_RETURN(a->nr_cols != b->nr_rows || a->nr_rows != c->nr_rows || b->nr_cols != c->nr_cols, "Invalid dimensions for matrix multiply", 1);
 	CHECK_ERROR_RETURN(a->nr_rows != a->nr_cols || b->nr_rows != b->nr_cols || c->nr_rows != c->nr_cols, "All matrices must be square", 1);
@@ -330,35 +330,107 @@ int DenseMatrix_mt_strassen2(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, D
 	if (half_dim == min_dim) {
 		DenseMatrix_mt_mult_f = DenseMatrix_mt_mult_ss;
 	} else {
-		DenseMatrix_mt_mult_f = DenseMatrix_mt_strassen2;
+		DenseMatrix_mt_mult_f = DenseMatrix_mt_strassen;
 	}
 
-	/////////////////// Compute M0
+	/////////////////// Compute M_0
 
 	res = DenseMatrix_mt_add_ld(&a_quad[0][0], lda, &a_quad[1][1], lda, &t0, half_dim, nr_threads);
-	CHECK_ZERO_ERROR_RETURN(res, "Failed to add A_00 + A_11");
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = A_00 + A_11");
 
 	res = DenseMatrix_mt_add_ld(&b_quad[0][0], ldb, &b_quad[1][1], ldb, &t1, half_dim, nr_threads);
-	CHECK_ZERO_ERROR_RETURN(res, "Failed to add B_00 + B_11");
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_1 = B_00 + B_11");
 
 	res = DenseMatrix_mt_mult_f(&t0, half_dim, &t1, half_dim, &m[0], half_dim, nr_threads, min_dim);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_0 = T_0 * T_1");
 
-	/////////////////// Compute M1
+	/////////////////// Compute M_1
 
 	res = DenseMatrix_mt_add_ld(&a_quad[1][0], lda, &a_quad[1][1], lda, &t0, half_dim, nr_threads);
-	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute A_10 + A_11");
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = A_10 + A_11");
 
 	res = DenseMatrix_mt_mult_f(&t0, half_dim, &b_quad[0][0], ldb, &m[1], half_dim, nr_threads, min_dim);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_1 = T_0 * B_11");
 
-	/////////////////// Compute M2
+	/////////////////// Compute M_2
 
-	res = DenseMatrix_mt_add_ld(&a_quad[1][0], lda, &a_quad[1][1], lda, &t0, half_dim, nr_threads);
-	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute A_10 + A_11");
+	res = DenseMatrix_mt_sub_ld(&b_quad[0][1], ldb, &b_quad[1][1], ldb, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = B_01 - B_11");
 
-	res = DenseMatrix_mt_mult_f(&t0, half_dim, &b_quad[0][0], ldb, &m[1], half_dim, nr_threads, min_dim);
-	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_1 = T_0 * B_11");
+	res = DenseMatrix_mt_mult_f(&a_quad[0][0], lda, &t0, half_dim, &m[2], half_dim, nr_threads, min_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_2 = A_00 * T0");
+
+	/////////////////// Compute M_3
+
+	res = DenseMatrix_mt_sub_ld(&b_quad[1][0], ldb, &b_quad[0][0], ldb, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = B_10 - B_00");
+
+	res = DenseMatrix_mt_mult_f(&a_quad[1][1], lda, &t0, half_dim, &m[3], half_dim, nr_threads, min_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_3 = A_11 * T0");
+
+	/////////////////// Compute M_4
+
+	res = DenseMatrix_mt_sub_ld(&a_quad[0][0], lda, &a_quad[0][1], lda, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = A_00 + A_01");
+
+	res = DenseMatrix_mt_mult_f(&t0, half_dim, &a_quad[1][1], lda, &m[4], half_dim, nr_threads, min_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_4 = T0 * A_11");
+
+	/////////////////// Compute M_5
+
+	res = DenseMatrix_mt_sub_ld(&a_quad[1][0], lda, &a_quad[0][0], lda, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = A_10 - A_00");
+
+	res = DenseMatrix_mt_add_ld(&b_quad[0][0], ldb, &b_quad[0][1], ldb, &t1, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_1 = B_00 + B_01");
+
+	res = DenseMatrix_mt_mult_f(&t0, half_dim, &t1, half_dim, &m[5], half_dim, nr_threads, min_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_5 = T_0 * T_1");
+
+	/////////////////// Compute M_6
+
+	res = DenseMatrix_mt_sub_ld(&a_quad[0][1], lda, &a_quad[1][1], lda, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = A_01 - A_11");
+
+	res = DenseMatrix_mt_add_ld(&b_quad[1][0], ldb, &b_quad[1][1], ldb, &t1, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_1 = B_10 + B_11");
+
+	res = DenseMatrix_mt_mult_f(&t0, half_dim, &t1, half_dim, &m[6], half_dim, nr_threads, min_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_6 = T_0 * T_1");
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/////////////////// Compute C_00
+
+	res = DenseMatrix_mt_add_ld(&m[0], half_dim, &m[3], half_dim, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = M0 + M3");
+
+	res = DenseMatrix_mt_add_ld(&m[4], half_dim, &m[6], half_dim, &t1, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_1 = M4 + M6");
+
+	res = DenseMatrix_mt_sub_ld(&t0, half_dim, &t1, half_dim, &c_quad[0][0], ldc, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute C_00 = T0 - T1");
+
+	/////////////////// Compute C_01
+
+	res = DenseMatrix_mt_add_ld(&m[2], half_dim, &m[4], half_dim, &c_quad[0][1], ldc, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute C_01 = M2 + M5");
+
+	/////////////////// Compute C_10
+
+	res = DenseMatrix_mt_add_ld(&m[1], half_dim, &m[3], half_dim, &c_quad[1][0], ldc, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute C_10 = M1 + M4");
+
+	/////////////////// Compute C_11
+
+	res = DenseMatrix_mt_sub_ld(&m[0], half_dim, &m[1], half_dim, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_0 = M0 - M1");
+
+	res = DenseMatrix_mt_add_ld(&m[2], half_dim, &m[5], half_dim, &t1, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute T_1 = M2 + M5");
+
+	res = DenseMatrix_mt_add_ld(&t0, half_dim, &t1, half_dim, &c_quad[1][1], ldc, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute C_11 = T0 + T1");
 
 	return 0;
 }
