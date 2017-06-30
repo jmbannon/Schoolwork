@@ -14,7 +14,7 @@ int DenseMatrix_print_ld(DenseMatrix *mat, int ld) {
             idx = IDX2RM(i, j, ld);
             printf("%*.3f ", max_width, mat->data[idx]);
         }
-        printf("\n\n");
+        printf("\n");
     }
 }
 

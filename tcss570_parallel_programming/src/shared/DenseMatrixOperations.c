@@ -296,13 +296,6 @@ int DenseMatrix_mt_mult_ss(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, Den
 int depth = 0;
 
 int DenseMatrix_mt_strassen(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc, int nr_threads, int min_dim) {
-	printf("Computing strassen on %d:\n", ++depth);
-	DenseMatrix_print_ld(a, lda);
-	printf("\n\n");
-	DenseMatrix_print_ld(b, ldb);
-	printf("\n\n");
-	DenseMatrix_print_ld(c, ldc);
-	printf("\n\n");
 	int res;
 	CHECK_ERROR_RETURN(a->nr_cols != b->nr_rows || a->nr_rows != c->nr_rows || b->nr_cols != c->nr_cols, "Invalid dimensions for matrix multiply", 1);
 	CHECK_ERROR_RETURN(a->nr_rows != a->nr_cols || b->nr_rows != b->nr_cols || c->nr_rows != c->nr_cols, "All matrices must be square", 1);
@@ -385,9 +378,6 @@ int DenseMatrix_mt_strassen(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, De
 	res = DenseMatrix_mt_mult_f(&t0, half_dim, &b_quad[1][1], ldb, &m[4], half_dim, nr_threads, min_dim);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_4 = T0 * B_11");
 
-	printf("M4\n");
-	DenseMatrix_print_ld(&m[4], half_dim);
-
 	/////////////////// Compute M_5
 
 	res = DenseMatrix_mt_sub_ld(&a_quad[1][0], lda, &a_quad[0][0], lda, &t0, half_dim, nr_threads);
@@ -444,14 +434,5 @@ int DenseMatrix_mt_strassen(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, De
 	res = DenseMatrix_mt_add_ld(&t1, half_dim, &m[5], half_dim, &c_quad[1][1], ldc, nr_threads);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute C_11 = T1 + M5");
 
-	printf("Result: %d:\n", depth);
-	DenseMatrix_print_ld(a, lda);
-	printf("\n\n");
-	DenseMatrix_print_ld(b, ldb);
-	printf("\n\n");
-	DenseMatrix_print_ld(c, ldc);
-	printf("\n\n");
-
-	--depth;
 	return 0;
 }
