@@ -20,6 +20,8 @@ typedef struct _DenseMatrix {
 
 int DenseMatrix_print(DenseMatrix *mat);
 
+int DenseMatrix_print_ld(DenseMatrix *mat, int ld);
+
 int DenseMatrix_mm_read(DenseMatrix *m, char *file_name);
 
 int DenseMatrix_init(DenseMatrix *m, int nr_rows, int nr_cols);

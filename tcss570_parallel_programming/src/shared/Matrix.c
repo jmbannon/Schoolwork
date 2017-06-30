@@ -6,16 +6,20 @@
 #include "error.h"
 #include "mmio.h"
 
-int DenseMatrix_print(DenseMatrix *mat) {
+int DenseMatrix_print_ld(DenseMatrix *mat, int ld) {
 	const int max_width = 7;
     int idx;
     for (int i = 0; i < mat->nr_rows; i++) {
         for (int j = 0; j < mat->nr_cols; j++) {
-            idx = IDX2RM(i, j, mat->nr_cols);
+            idx = IDX2RM(i, j, ld);
             printf("%*.3f ", max_width, mat->data[idx]);
         }
-        printf("\n");
+        printf("\n\n");
     }
+}
+
+int DenseMatrix_print(DenseMatrix *mat) {
+	return DenseMatrix_print_ld(mat, mat->nr_cols);
 }
 
 int DenseMatrix_init_mem_zero(DenseMatrix *m) {
