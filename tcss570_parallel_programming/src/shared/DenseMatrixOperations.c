@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include "Matrix.h"
 #include "error.h"
 
@@ -17,12 +18,16 @@ typedef struct _PThreadMultInfo {
 // Elementary Operators (add, mult)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int DenseMatrix_add(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc) {
+/**
+ * DenseMatrix add with result scalar
+ * C = scalar(A + B)
+ */ 
+int DenseMatrix_add(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc, Numeric scalar) {
 	CHECK_ERROR_RETURN(a->nr_cols != b->nr_cols || a->nr_cols != c->nr_cols || a->nr_rows != b->nr_rows || a->nr_rows != c->nr_rows, "Invalid dimensions for matrix add", 1);
 
 	for (int i = 0; i < a->nr_rows; i++) {
 		for (int j = 0; j < a->nr_cols; j++) {
-			c->data[IDX2RM(i, j, ldc)] = a->data[IDX2RM(i, j, lda)] + b->data[IDX2RM(i, j, ldb)];
+			c->data[IDX2RM(i, j, ldc)] = scalar * (a->data[IDX2RM(i, j, lda)] + b->data[IDX2RM(i, j, ldb)]);
 		}
 	}
 
@@ -54,7 +59,11 @@ int DenseMatrix_mult(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatr
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int DenseMatrix_st_add(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c) {
-	return DenseMatrix_add(a, a->nr_cols, b, b->nr_cols, c, c->nr_cols);
+	return DenseMatrix_add(a, a->nr_cols, b, b->nr_cols, c, c->nr_cols, 1.0);
+}
+
+int DenseMatrix_st_sub(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c) {
+	return DenseMatrix_add(a, a->nr_cols, b, b->nr_cols, c, c->nr_cols, -1.0);
 }
 
 int DenseMatrix_st_mult(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c) {
@@ -96,22 +105,12 @@ int DenseMatrix_mt_mult_ld(DenseMatrix *a, int lda,
 			break;
 		}
 
-		info[i].a = a;
-		info[i].lda = a->nr_cols;
-		info[i].b = &t_b[i];
-		info[i].ldb = b->nr_cols;
-		info[i].c = &t_c[i];
-		info[i].ldc = b->nr_cols;
+		info[i] = (PThreadMultInfo){ .a = a, .lda = lda, .b = &t_b[i], .ldb = ldb, .c = &t_c[i], .ldc = ldc };
 
 		t_nr_cols = (b->nr_cols / nr_threads) + (i < b->nr_cols % nr_threads);
 
-		t_b[i].nr_rows = b->nr_rows;
-		t_b[i].nr_cols = t_nr_cols;
-		t_b[i].data = &b->data[IDX2RM(0, col_offset, b->nr_cols)];
-
-		t_c[i].nr_rows = c->nr_rows;
-		t_c[i].nr_cols = t_nr_cols;
-		t_c[i].data = &c->data[IDX2RM(0, col_offset, c->nr_cols)];
+		t_b[i] = (DenseMatrix){ .nr_rows = b->nr_rows, .nr_cols = t_nr_cols, .data = &b->data[IDX2RM(0, col_offset, ldb)] };
+		t_c[i] = (DenseMatrix){ .nr_rows = c->nr_rows, .nr_cols = t_nr_cols, .data = &c->data[IDX2RM(0, col_offset, ldc)] };
 
 		// printf("thread %d: B[,%d:%d] out of %d\n", i, col_offset, col_offset + t_nr_cols - 1, b->nr_cols);
 
@@ -144,18 +143,25 @@ int DenseMatrix_mt_mult(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int nr_t
 
 void * DenseMatrix_mt_add_wrapper(void *info) {
 	PThreadMultInfo *minfo = (PThreadMultInfo *)info;
-	DenseMatrix_add(minfo->a, minfo->lda, minfo->b, minfo->ldb, minfo->c, minfo->ldc);
+	DenseMatrix_add(minfo->a, minfo->lda, minfo->b, minfo->ldb, minfo->c, minfo->ldc, 1.0);
+	return NULL;
+}
+
+void * DenseMatrix_mt_sub_wrapper(void *info) {
+	PThreadMultInfo *minfo = (PThreadMultInfo *)info;
+	DenseMatrix_add(minfo->a, minfo->lda, minfo->b, minfo->ldb, minfo->c, minfo->ldc, -1.0);
 	return NULL;
 }
 
 /**
- * DenseMatrix multi-threaded multiply
- * Each thread takes a partition of a, b, and c's rows, A_i, B_i, C_i, and performs C_i = A_i + B_i
+ * DenseMatrix multi-threaded add/sub
+ * Each thread takes a partition of a, b, and c's rows, A_i, B_i, C_i, and performs C_i = A_i +- B_i
  */
-int DenseMatrix_mt_add_ld(DenseMatrix *a, int lda, 
-	                      DenseMatrix *b, int ldb,
-	                      DenseMatrix *c, int ldc,
-	                      int nr_threads) {
+int DenseMatrix_mt_addsub_ld(DenseMatrix *a, int lda, 
+	                         DenseMatrix *b, int ldb,
+	                         DenseMatrix *c, int ldc,
+	                         int nr_threads,
+	                         bool add) {
 	int res;
 	CHECK_ERROR_RETURN(a->nr_cols != b->nr_cols || a->nr_cols != c->nr_cols || a->nr_rows != b->nr_rows || a->nr_rows != c->nr_rows, "Invalid dimensions for matrix add", 1);
 
@@ -189,7 +195,11 @@ int DenseMatrix_mt_add_ld(DenseMatrix *a, int lda,
 
 		row_offset += t_nr_rows;
 
-		res = pthread_create(&thread_ids[i], NULL, DenseMatrix_mt_add_wrapper, (void *)&info[i]);
+		if (add) {
+			res = pthread_create(&thread_ids[i], NULL, DenseMatrix_mt_add_wrapper, (void *)&info[i]);
+		} else { // sub
+			res = pthread_create(&thread_ids[i], NULL, DenseMatrix_mt_sub_wrapper, (void *)&info[i]);
+		}
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to create pthread");
 
 		++active_nr_threads;
@@ -201,6 +211,20 @@ int DenseMatrix_mt_add_ld(DenseMatrix *a, int lda,
 	}
 
 	return 0;
+}
+
+int DenseMatrix_mt_add_ld(DenseMatrix *a, int lda, 
+	                      DenseMatrix *b, int ldb,
+	                      DenseMatrix *c, int ldc,
+	                      int nr_threads) {
+	return DenseMatrix_mt_addsub_ld(a, lda, b, ldb, c, ldc, nr_threads, true);
+}
+
+int DenseMatrix_mt_sub_ld(DenseMatrix *a, int lda, 
+	                      DenseMatrix *b, int ldb,
+	                      DenseMatrix *c, int ldc,
+	                      int nr_threads) {
+	return DenseMatrix_mt_addsub_ld(a, lda, b, ldb, c, ldc, nr_threads, false);
 }
 
 /**
@@ -254,10 +278,87 @@ int DenseMatrix_mt_strassen(DenseMatrix *a, DenseMatrix *b, DenseMatrix *c, int 
 			res = DenseMatrix_mult(&a_quad[x][1], ld, &b_quad[1][y], ld, &t2, half_dim);
 			CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply");
 
-			res = DenseMatrix_add(&t1, half_dim, &t2, half_dim, &c_quad[x][y], ld);
+			res = DenseMatrix_add(&t1, half_dim, &t2, half_dim, &c_quad[x][y], ld, 1.0);
 			CHECK_ZERO_ERROR_RETURN(res, "Failed to add");
 		}
 	}
+
+	return 0;
+}
+
+/**
+ * DenseMatrix multi-threaded multiply with strassen signature
+ */
+int DenseMatrix_mt_mult_ss(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc, int nr_threads, int min_dim) {
+	return DenseMatrix_mt_mult_ld(a, lda, b, ldb, c, ldc, nr_threads);
+}
+
+int DenseMatrix_mt_strassen2(DenseMatrix *a, int lda, DenseMatrix *b, int ldb, DenseMatrix *c, int ldc, int nr_threads, int min_dim) {
+	int res;
+	CHECK_ERROR_RETURN(a->nr_cols != b->nr_rows || a->nr_rows != c->nr_rows || b->nr_cols != c->nr_cols, "Invalid dimensions for matrix multiply", 1);
+	CHECK_ERROR_RETURN(a->nr_rows != a->nr_cols || b->nr_rows != b->nr_cols || c->nr_rows != c->nr_cols, "All matrices must be square", 1);
+
+	DenseMatrix a_quad[2][2];
+	DenseMatrix b_quad[2][2];
+	DenseMatrix c_quad[2][2];
+
+	int half_dim = a->nr_rows / 2;
+	for (int x = 0; x < 2; x++) {
+		for (int y = 0; y < 2; y++) {
+			a_quad[x][y] = (DenseMatrix){ .nr_rows = half_dim, .nr_cols = half_dim, .data = &a->data[IDX2RM(x * half_dim, y * half_dim, lda)] };
+			b_quad[x][y] = (DenseMatrix){ .nr_rows = half_dim, .nr_cols = half_dim, .data = &b->data[IDX2RM(x * half_dim, y * half_dim, ldb)] };
+			c_quad[x][y] = (DenseMatrix){ .nr_rows = half_dim, .nr_cols = half_dim, .data = &c->data[IDX2RM(x * half_dim, y * half_dim, ldc)] };
+		}
+	}
+
+	DenseMatrix m[7];
+	DenseMatrix t0, t1;
+
+	for (int i = 0; i < 7; i++) {
+		res = DenseMatrix_init(&m[i], half_dim, half_dim);
+		CHECK_ZERO_ERROR_RETURN(res, "Failed to init m's");
+	}
+
+	res = DenseMatrix_init(&t0, half_dim, half_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to init t1");
+
+	res = DenseMatrix_init(&t1, half_dim, half_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to init t1");
+
+	// Function pointer for single or multi-threaded add/mult
+	int (*DenseMatrix_mt_mult_f)(DenseMatrix *, int, DenseMatrix *, int, DenseMatrix *, int, int, int);
+	if (half_dim == min_dim) {
+		DenseMatrix_mt_mult_f = DenseMatrix_mt_mult_ss;
+	} else {
+		DenseMatrix_mt_mult_f = DenseMatrix_mt_strassen2;
+	}
+
+	/////////////////// Compute M0
+
+	res = DenseMatrix_mt_add_ld(&a_quad[0][0], lda, &a_quad[1][1], lda, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to add A_00 + A_11");
+
+	res = DenseMatrix_mt_add_ld(&b_quad[0][0], ldb, &b_quad[1][1], ldb, &t1, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to add B_00 + B_11");
+
+	res = DenseMatrix_mt_mult_f(&t0, half_dim, &t1, half_dim, &m[0], half_dim, nr_threads, min_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_0 = T_0 * T_1");
+
+	/////////////////// Compute M1
+
+	res = DenseMatrix_mt_add_ld(&a_quad[1][0], lda, &a_quad[1][1], lda, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute A_10 + A_11");
+
+	res = DenseMatrix_mt_mult_f(&t0, half_dim, &b_quad[0][0], ldb, &m[1], half_dim, nr_threads, min_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_1 = T_0 * B_11");
+
+	/////////////////// Compute M2
+
+	res = DenseMatrix_mt_add_ld(&a_quad[1][0], lda, &a_quad[1][1], lda, &t0, half_dim, nr_threads);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute A_10 + A_11");
+
+	res = DenseMatrix_mt_mult_f(&t0, half_dim, &b_quad[0][0], ldb, &m[1], half_dim, nr_threads, min_dim);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to compute M_1 = T_0 * B_11");
 
 	return 0;
 }

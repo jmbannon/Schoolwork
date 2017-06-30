@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
 	Timer_start(&t);
 	//res = DenseMatrix_mt_strassen(&a, &b, &c, ld, 1, min_dim);
-	res = DenseMatrix_mt_add(&a, &b, &c, nr_threads);
+	res = DenseMatrix_mt_mult(&a, &b, &c, nr_threads);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply ab = c");
 	Timer_end(&t);
 
