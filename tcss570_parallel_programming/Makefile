@@ -4,7 +4,7 @@ PTHREAD_EXEC = multiply_pthread
 STRASSEN_EXEC = multiply_strassen
 CC    = gcc
 
-LIBS = -lpthread
+LIBS = -fopenmp -lpthread
 INCL = -I./include/iohb1.0 -L./include/iohb1.0
 
 FLAGS = ${LIBS} ${INCL}
