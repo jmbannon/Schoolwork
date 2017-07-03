@@ -4,7 +4,7 @@ PTHREAD_EXEC = multiply_pthread
 STRASSEN_EXEC = multiply_strassen
 CC    = gcc
 
-LIBS = -fopenmp -lpthread
+LIBS = -lpthread
 INCL = -I./include/iohb1.0 -L./include/iohb1.0
 
 FLAGS = ${LIBS} ${INCL}
@@ -48,3 +48,4 @@ clean_objs:
 
 clean:
 	rm -f *.o ${STHREAD_EXEC} ${PTHREAD_EXEC} ${STRASSEN_EXEC}
+
