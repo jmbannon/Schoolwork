@@ -8,41 +8,29 @@
 int main(int argc, char **argv) {
 	int res;
 	DenseMatrix a, b, c;
+	int a_nr_rows, a_nr_cols;
+	int b_nr_rows, b_nr_cols;
+
 	Timer t;
 
 	int nr_threads = atoi(argv[3]);
+	int min_dim = atoi(argv[4]);
 
-	// res = DenseMatrix_mm_read(&a, argv[1]);
-	// CHECK_ZERO_ERROR_RETURN(res, "Failed to read DenseMatrix a");
+	res = DenseMatrix_mm_read_strassen(&a, argv[1], &a_nr_rows, &a_nr_cols);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to read DenseMatrix a");
 
-	// res = DenseMatrix_mm_read(&b, argv[2]);
-	// CHECK_ZERO_ERROR_RETURN(res, "Failed to read DenseMatrix b");
-
-	int ld = 64;
-	int min_dim = 4;
-
-	res = DenseMatrix_init_seq_row(&a, ld, ld);
-	CHECK_ZERO_ERROR_RETURN(res, "Failed to init a");
-
-	res = DenseMatrix_init_seq_row(&b, ld, ld);
-	CHECK_ZERO_ERROR_RETURN(res, "Failed to init b");
+	res = DenseMatrix_mm_read_strassen(&b, argv[2], &b_nr_rows, &b_nr_cols);
+	CHECK_ZERO_ERROR_RETURN(res, "Failed to read DenseMatrix b");
 
 	res = DenseMatrix_init(&c, a.nr_rows, b.nr_cols);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix c");
 
-
 	Timer_start(&t);
-	//res = DenseMatrix_mt_strassen(&a, &b, &c, ld, 1, min_dim);
-	//res = DenseMatrix_mt_mult(&a, &b, &c, nr_threads);
-	res = DenseMatrix_mt_strassen(&a, ld, &b, ld, &c, ld, nr_threads, 4);
+	res = DenseMatrix_mt_strassen(&a, a.nr_cols, &b, b.nr_cols, &c, c.nr_cols, nr_threads, min_dim);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply ab = c");
 	Timer_end(&t);
 
-	printf("Successfully multiplied %s (%d-by-%d) and %s (%d-by-%d).\n", argv[1], a.nr_rows, a.nr_cols, argv[2], b.nr_rows, b.nr_cols);
-	printf("Duration: %lf sec\n", Timer_dur_sec(&t));
-	printf("Thread Count: %d\n", nr_threads);
-
-	DenseMatrix_print(&c);
+	printf("strassen_mthread,%d,%d-by-%d,%d-by-%d,%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, min_dim, Timer_dur_sec(&t));
 
 	return 0;
 }

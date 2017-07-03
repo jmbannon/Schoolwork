@@ -26,10 +26,8 @@ int main(int argc, char **argv) {
 	res = DenseMatrix_mt_mult(&a, &b, &c, nr_threads);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply ab = c");
 	Timer_end(&t);
-
-	printf("Successfully multiplied %s (%d-by-%d) and %s (%d-by-%d).\n", argv[1], a.nr_rows, a.nr_cols, argv[2], b.nr_rows, b.nr_cols);
-	printf("Duration: %lf sec\n", Timer_dur_sec(&t));
-	printf("Thread Count: %d\n", nr_threads);
+	
+	printf("multi_thread,%d,%d-by-%d,%d-by-%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, Timer_dur_sec(&t));
 
 	return 0;
 }

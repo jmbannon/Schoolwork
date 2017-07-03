@@ -223,7 +223,7 @@ int DenseMatrix_mm_read_strassen(DenseMatrix *m, char *file_name, int *nr_rows, 
 
 		int dim = pow2dim(*nr_rows, *nr_cols);
 
-		res = DenseMatrix_init(m, dim, dim);
+		res = DenseMatrix_init_zero(m, dim, dim);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to allocate memory for mm matrix");
 
 		res = DenseMatrix_parse_mm_dense(m, file);
