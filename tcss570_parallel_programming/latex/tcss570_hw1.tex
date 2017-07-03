@@ -32,7 +32,7 @@ In this paper, I outline the performance characteristics between three implement
 One core performs a matrix-matrix multiply $C = AB$ using a trivial triple-nested for-loop.
 
 \paragraph{Multi-Threaded}
-Each thread $t_{i}$ performs a subset of the matrix-matrix multiply $C_{i} = AB_{i}$, where $B$ is partitioned by sequential columns $B_{i} = \lbrace b_{j}, b_{j+1}, \dots, b_{j+n} \rbrace$ evenly amongst all $t_{i}$. In the case that $B$'s columns are greater than the number of threads, we assign a single column to a subset of threads and leave the remaining idle.
+Each thread $t_{i}$ performs a subset of the matrix-matrix multiply $C_{i} = AB_{i}$, where $B$ is partitioned by consecutive columns $B_{i} = \lbrace b_{j}, b_{j+1}, \dots, b_{j+n} \rbrace$ evenly amongst all $t_{i}$. In the case that $B$'s columns are greater than the number of threads, we assign a single column to a subset of threads and leave the remaining idle.
 
 \paragraph{Strassen Algorithm}
 Each operation (dense matrix-matrix add, subtract, multiply) of the Strassen algorithm is multi-threaded amongst all threads. Every matrix-matrix multiply recursively calls Strassen algorithm, inconsequently performing a depth-first traversal in the recursion. After the split input matrix size reaches a certain threashold, the multi-threaded implementation is used.
@@ -51,5 +51,14 @@ When multiplying a 1374-by-1374 matrix with itself, the 16-thread multi-threaded
 \linebreak
 
 The 3937-by-3937 matrix performs best using the 6-thread Strassen algorithm, with a 128-size stopping condition for dense matrix-matrix multiplies, in $45.11$ seconds. The second best metric has the same configuration except it uses 12 threads. In this case, hyper-threading decreases performance. The problem size in this case is large enough to where the Strassen algorithm does not over-parallelize, which takes advantage of its lower complexity of $\mathcal{O}(n^{log_{2}{7}})$ compared to the traditional matrix-multiply complexity of $\mathcal{O}(n^3)$.
+
+\paragraph{Challenges}
+The main challenge was implementing the Strassen algorithm. After a few hours of debugging, the implementation fell into place. Using the depth-first traversal allowed me to reuse my multithread matrix multiply which helped.
+
+\paragraph{Further Improvements}
+Parallelizing the Strassen algorithm in a way where multiple threads can work on different operations (multiply, add, subtract) simultaniously could perhaps yield better performance. This could potentially decrease memory-lookups by having multiple threads simultaneously fetch different parts of the matrices from main memory into the L3, where other threads would subsequently read that same data later.
+
+\paragraph{Locking}
+Dense matrix-matrix multiply does not require locking because the problem can be partitioned into completely independent sub-problems. As described above, each thread $t_{i}$ is responsible for computing $C_{i} = AB_{i}$. Once all threads complete, $C$ is formed. The closest thing to a lock in this problem is a barrier, to wait for all $t_{i}$ to complete so we know $C$ is formed.
 
 \end{document}
