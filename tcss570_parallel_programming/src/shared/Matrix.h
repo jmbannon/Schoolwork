@@ -1,6 +1,8 @@
 #ifndef __MATRIX_H__
 #define __MATRIX_H__
 
+#define USE_OPEN_MP 1
+
 #define FLOAT_NUMERIC 0
 
 #if FLOAT_NUMERIC

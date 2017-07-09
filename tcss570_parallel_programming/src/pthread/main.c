@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 #include "../shared/Matrix.h"
 #include "../shared/error.h"
 #include "../shared/DenseMatrixOperations.h"
@@ -21,6 +22,10 @@ int main(int argc, char **argv) {
 	res = DenseMatrix_init(&c, a.nr_rows, b.nr_cols);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix c");
 
+	#if USE_OPEN_MP
+		omp_set_dynamic(0);     		 // Explicitly disable dynamic teams
+		omp_set_num_threads(nr_threads); // Use nr_threads threads for all consecutive parallel regions
+	#endif
 
 	Timer_start(&t);
 	res = DenseMatrix_mt_mult(&a, &b, &c, nr_threads);
