@@ -20,6 +20,19 @@ typedef struct _DenseMatrix {
 	int nr_cols;
 } DenseMatrix;
 
+typedef struct _SparseMatrix {
+	int *row;
+	int *col;
+	Numeric *data;
+
+	int size;
+	int nr_elems;
+
+
+	int nr_rows;
+	int nr_cols;
+} SparseMatrix;
+
 int DenseMatrix_print(DenseMatrix *mat);
 
 int DenseMatrix_print_ld(DenseMatrix *mat, int ld);
