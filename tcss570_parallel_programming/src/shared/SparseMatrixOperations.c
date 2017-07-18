@@ -49,7 +49,6 @@ int SparseMatrix_merge(SparseMatrix *m, SparseMatrix *c) {
 	bool is_zero;
 	int j;
 	for (int i = 0; i < m->nr_elems; i++) {
-
 		is_zero = true;
 		for (j = 0; j < c->nr_elems; j++) {
 			if (m->row[i] == c->row[j] && m->col[i] == c->col[j]) {

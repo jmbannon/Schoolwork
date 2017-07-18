@@ -77,8 +77,8 @@ int main(int argc, char **argv) {
 			res = MPI_Isend(&a.row[offset], nr_elems[i], MPI_INT, i, 1, MPI_COMM_WORLD, &requests[1 * nr_procs + i]);
 			res = MPI_Isend(&a.col[offset], nr_elems[i], MPI_INT, i, 2, MPI_COMM_WORLD, &requests[2 * nr_procs + i]);
 
-			res = MPI_Isend(&b.row[offset], b.nr_elems, MPI_INT, i, 4, MPI_COMM_WORLD, &requests[4 * nr_procs + i]);
-			res = MPI_Isend(&b.col[offset], b.nr_elems, MPI_INT, i, 5, MPI_COMM_WORLD, &requests[5 * nr_procs + i]);
+			res = MPI_Isend(b.row, b.nr_elems, MPI_INT, i, 4, MPI_COMM_WORLD, &requests[4 * nr_procs + i]);
+			res = MPI_Isend(b.col, b.nr_elems, MPI_INT, i, 5, MPI_COMM_WORLD, &requests[5 * nr_procs + i]);
 		}
 
 		for (int i = 1; i < nr_procs; i++) {
@@ -87,9 +87,10 @@ int main(int argc, char **argv) {
 			}
 		}
 
+		offset = a.nr_elems;
 		a.nr_elems = nr_elems[0];
 		res = SparseMatrix_mult(&a, &b, &c_merge);
-		a.nr_elems = a.size;
+		a.nr_elems = offset;
 
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply ab = c");
 
@@ -103,14 +104,16 @@ int main(int argc, char **argv) {
 
 		offset = nr_elems[0];
 		for (int i = 1; i < nr_procs; i++) {
-			res = MPI_Irecv(&c.row[offset], nr_elems[i], MPI_INT, i, 1, MPI_COMM_WORLD, &requests[0 * nr_procs + i]);
-			res = MPI_Irecv(&c.col[offset], nr_elems[i], MPI_INT, i, 2, MPI_COMM_WORLD, &requests[1 * nr_procs + i]);
+			res = MPI_Irecv(&c_merge.row[offset], nr_elems[i], MPI_INT, i, 1, MPI_COMM_WORLD, &requests[0 * nr_procs + i]);
+			res = MPI_Irecv(&c_merge.col[offset], nr_elems[i], MPI_INT, i, 2, MPI_COMM_WORLD, &requests[1 * nr_procs + i]);
 
 			#if FLOAT_NUMERIC
 				res = MPI_Irecv(&c_merge.data[offset], nr_elems[i], MPI_FLOAT, i, 3, MPI_COMM_WORLD, &requests[2 * nr_procs + i]);
 			#else
 				res = MPI_Irecv(&c_merge.data[offset], nr_elems[i], MPI_DOUBLE, i, 3, MPI_COMM_WORLD, &requests[2 * nr_procs + i]);
 			#endif
+
+			c_merge.nr_elems += nr_elems[i];
 		}
 
 		for (int i = 1; i < nr_procs; i++) {
@@ -122,6 +125,9 @@ int main(int argc, char **argv) {
 		SparseMatrix_merge(&c_merge, &c);
 
 		Timer_end(&t);
+
+		SparseMatrix_print(&c);
+
 		printf("mpi_sparse,%d,%d-by-%d,%d-by-%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, Timer_dur_sec(&t));
 	} else {
 		int dimensions[6];
@@ -131,9 +137,11 @@ int main(int argc, char **argv) {
 
 		res = SparseMatrix_init(&a, dimensions[1], dimensions[2], dimensions[0]);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix A");
+		a.nr_elems = a.size;
 
 		res = SparseMatrix_init(&b, dimensions[4], dimensions[5], dimensions[3]);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix B");
+		b.nr_elems = b.size;
 
 		max_size = a.nr_elems > b.nr_elems ? a.nr_elems : b.nr_elems;
 
@@ -142,11 +150,16 @@ int main(int argc, char **argv) {
 
 		#if FLOAT_NUMERIC
 			res = MPI_Recv(a.data, dimensions[0], MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &status);
-			res = MPI_Recv(b.data, dimensions[3], MPI_FLOAT, 0, 1, MPI_COMM_WORLD, &status);
+			res = MPI_Recv(b.data, dimensions[3], MPI_FLOAT, 0, 3, MPI_COMM_WORLD, &status);
 		#else
 			res = MPI_Recv(a.data, dimensions[0], MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
-			res = MPI_Recv(b.data, dimensions[3], MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
+			res = MPI_Recv(b.data, dimensions[3], MPI_DOUBLE, 0, 3, MPI_COMM_WORLD, &status);
 		#endif
+
+		res = MPI_Recv(a.row, dimensions[0], MPI_INT, 0, 1, MPI_COMM_WORLD, &status);
+		res = MPI_Recv(a.col, dimensions[0], MPI_INT, 0, 2, MPI_COMM_WORLD, &status);
+		res = MPI_Recv(b.row, dimensions[3], MPI_INT, 0, 4, MPI_COMM_WORLD, &status);
+		res = MPI_Recv(b.col, dimensions[3], MPI_INT, 0, 5, MPI_COMM_WORLD, &status);
 
 		res = SparseMatrix_mult(&a, &b, &c);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply ab = c");
