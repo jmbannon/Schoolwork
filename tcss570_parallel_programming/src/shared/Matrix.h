@@ -51,4 +51,10 @@ int DenseMatrix_init_seq_row(DenseMatrix *m, int nr_rows, int nr_cols);
 
 int DenseMatrix_init_seq_col(DenseMatrix *m, int nr_rows, int nr_cols);
 
+int SparseMatrix_init_mem(SparseMatrix *m);
+
+int SparseMatrix_init(SparseMatrix *m, int nr_rows, int nr_cols, int size);
+
+int SparseMatrix_mm_read(SparseMatrix *m, char *file_name);
+
 #endif

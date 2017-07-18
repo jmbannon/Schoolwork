@@ -19,11 +19,11 @@ int SparseMatrix_init_mem(SparseMatrix *m) {
 	return 0;
 }
 
-int SparseMatrix_init(SparseMatrix *m, int nr_rows, int nr_cols, int size, int nr_elems) {
+int SparseMatrix_init(SparseMatrix *m, int nr_rows, int nr_cols, int size) {
 	m->nr_rows = nr_rows;
 	m->nr_cols = nr_cols;
 	m->size = size;
-	m->nr_elems = nr_elems;
+	m->nr_elems = 0;
 
 	return SparseMatrix_init_mem(m);
 }

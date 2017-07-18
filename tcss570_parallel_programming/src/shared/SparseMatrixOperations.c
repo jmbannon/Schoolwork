@@ -42,3 +42,30 @@ int SparseMatrix_mult(SparseMatrix *a, SparseMatrix *b, SparseMatrix *c) {
 
 	return 0;
 }
+
+int SparseMatrix_merge(SparseMatrix *m, SparseMatrix *c) {
+	CHECK_ERROR_RETURN(m->nr_cols != c->nr_cols || m->nr_rows != c->nr_rows || m->size != c->size, "Invalid dimensions for matrix merge", 1);
+
+	c->nr_elems = 0;
+	bool is_zero;
+	int j;
+	for (int i = 0; i < m->nr_elems; i++) {
+
+		is_zero = true;
+		for (j = 0; j < c->nr_elems; j++) {
+			if (m->row[i] == c->row[j] && m->col[i] == c->col[j]) {
+				c->data[j] += m->data[i];
+				is_zero = false;
+				break;
+			}
+		}
+		if (is_zero) {
+			c->row[j] = m->row[i];
+			c->col[j] = m->col[j];
+			c->data[j] = m->data[j];
+			c->nr_elems++; 
+		}
+	}
+
+	return 0;
+}

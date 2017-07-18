@@ -66,6 +66,8 @@ int main(int argc, char **argv) {
 				res = MPI_Isend(&a.data[IDX2RM(offset, 0, a.nr_cols)], nr_rows[i] * a.nr_cols, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &requests[i]);
 				res = MPI_Isend(b.data, b.nr_rows * b.nr_cols, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &requests[nr_procs + i]);
 			#endif
+
+			offset += nr_rows[i];
 		}
 
 		for (int i = 1; i < nr_procs; i++) {
@@ -89,6 +91,8 @@ int main(int argc, char **argv) {
 			#else
 				res = MPI_Irecv(&c.data[IDX2RM(offset, 0, c.nr_cols)], nr_rows[i] * c.nr_cols, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &requests[i]);
 			#endif
+
+			offset += nr_rows[i];
 		}
 
 		for (int i = 1; i < nr_procs; i++) {
