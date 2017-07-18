@@ -19,12 +19,11 @@ int SparseMatrix_mult(SparseMatrix *a, SparseMatrix *b, SparseMatrix *c) {
 	int k;
 	for (int i = 0; i < a->nr_elems; i++) {
 		for (int j = 0; j < b->nr_elems; j++) {
-
 			if (a->col[i] == b->row[j]) {
 				is_zero = true;
-				for (k = 0; k < c->nr_elems; c++) {
+				for (k = 0; k < c->nr_elems; k++) {
 					if (c->row[k] == a->row[i] && c->col[k] == b->col[j]) {
-						c->data[k] += a->data[i] * b->data[i];
+						c->data[k] += a->data[i] * b->data[j];
 						is_zero = false;
 						break;
 					}
@@ -32,7 +31,7 @@ int SparseMatrix_mult(SparseMatrix *a, SparseMatrix *b, SparseMatrix *c) {
 				if (is_zero) {
 					c->row[k] = a->row[i];
 					c->col[k] = b->col[j];
-					c->data[k] = a->data[i] * b->data[i];
+					c->data[k] = a->data[i] * b->data[j];
 					c->nr_elems++;
 				}
 			}

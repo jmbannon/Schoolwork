@@ -46,6 +46,10 @@ int SparseMatrix_parse_mm_sparse(SparseMatrix *m, FILE *file) {
 		#else
 			res = fscanf(file, "%d %d %lf\n", &m->row[i], &m->col[i], &m->data[i]);
 		#endif
+
+		--m->row[i];
+		--m->col[i];
+		
 		if (res == 3) {
 			i++;
 		}
@@ -89,4 +93,25 @@ int SparseMatrix_mm_read(SparseMatrix *m, char *file_name) {
 	}
 
 	return 0;
+}
+
+int SparseMatrix_print(SparseMatrix *m) {
+	bool is_zero;
+	const int max_width = 7;
+	for (int i = 0; i < m->nr_rows; i++) {
+		for (int j = 0; j < m->nr_cols; j++) {
+			is_zero = true;
+			for (int k = 0; k < m->nr_elems; k++) {
+				if (m->row[k] == i && m->col[k] == j) {
+					printf("%*.3f ", max_width, m->data[k]);
+					is_zero = false;
+					break;
+				}
+			}
+			if (is_zero) {
+				printf("%*.3f ", max_width, 0.0);
+			}
+		}
+		printf("\n");
+	}
 }

@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
 	res = SparseMatrix_init(&c, a.nr_rows, b.nr_cols, size);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix c");
 
-
 	Timer_start(&t);
 	res = SparseMatrix_mult(&a, &b, &c);
 	CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply ab = c");

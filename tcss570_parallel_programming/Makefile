@@ -11,7 +11,7 @@ MPI_CC = mpicc
 
 MPI_DIR = /usr/include/mpi
 
-LIBS = -fopenmp -lpthread -lmpi
+LIBS = -g -fopenmp -lpthread -lmpi
 INCL = -I./include/iohb1.0 -L./include/iohb1.0 -I${MPI_DIR}
 FLAGS = ${LIBS} ${INCL}
 

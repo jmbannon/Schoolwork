@@ -57,4 +57,6 @@ int SparseMatrix_init(SparseMatrix *m, int nr_rows, int nr_cols, int size);
 
 int SparseMatrix_mm_read(SparseMatrix *m, char *file_name);
 
+int SparseMatrix_print(SparseMatrix *m);
+
 #endif
