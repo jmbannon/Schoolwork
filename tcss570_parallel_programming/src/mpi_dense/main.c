@@ -75,14 +75,14 @@ int main(int argc, char **argv) {
 			res = MPI_Wait(&requests[nr_procs + i], &status);
 		}
 
+		offset = a.nr_rows;
 		a.nr_rows = nr_rows[0];
-		nr_rows[0] = c.nr_rows;
-		c.nr_rows = a.nr_rows;
+		c.nr_rows = nr_rows[0];
 
 		res = DenseMatrix_omp_mult(&a, a.nr_cols, &b, b.nr_cols, &c, c.nr_cols);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to multiply ab = c");
-		a.nr_rows = nr_rows[0];
-		c.nr_rows = nr_rows[0];
+		a.nr_rows = offset;
+		c.nr_rows = offset;
 
 		offset = nr_rows[0];
 		for (int i = 1; i < nr_procs; i++) {
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 		}
 
 		Timer_end(&t);
-		printf("mpi_dense,%d,%d-by-%d,%d-by-%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, Timer_dur_sec(&t));
+		printf("mpi_dense,%d,%d-by-%d,%d-by-%d,%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, nr_procs, Timer_dur_sec(&t));
 	} else {
 		int dimensions[4];
 		MPI_Status status;
