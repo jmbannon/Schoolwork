@@ -21,22 +21,27 @@ DENSE_MPI_SRC = $(wildcard src/mpi_dense/*.c)
 SPARSE_MPI_SRC = $(wildcard src/mpi_sparse/*.c)
 SHARED_SRC  = $(wildcard src/shared/*.c)
 
-all: sthread sthread_clean pthread pthread_clean strassen sthread_clean dense_mpi dense_mpi_clean sparse_mpi sparse_mpi_clean clean_objs
+all: sthread pthread strassen dense_mpi sparse_mpi clean_objs
 
 sthread: sthread_compile
 	${CC} ${FLAGS} -o ${STHREAD_EXEC} *.o ./include/iohb1.0/mmio.o
+	rm -f main.o
 
 pthread: pthread_compile
 	${CC} ${FLAGS} -o ${PTHREAD_EXEC} *.o ./include/iohb1.0/mmio.o
+	rm -f main.o
 
 strassen: strassen_compile
 	${CC} ${FLAGS} -o ${STRASSEN_EXEC} *.o ./include/iohb1.0/mmio.o
+	rm -f main.o
 
 dense_mpi: dense_mpi_compile
 	${MPI_CC} ${FLAGS} -o ${DENSE_MPI_EXEC} *.o ./include/iohb1.0/mmio.o
+	rm -f main.o
 
 sparse_mpi: sparse_mpi_compile
 	${MPI_CC} ${FLAGS} -o ${SPARSE_MPI_EXEC} *.o ./include/iohb1.0/mmio.o
+	rm -f main.o
 
 sthread_compile:
 	${CC} ${FLAGS} -c ${STHREAD_SRC} ${SHARED_SRC}
@@ -52,21 +57,6 @@ dense_mpi_compile:
 
 sparse_mpi_compile:
 	${CC} ${FLAGS} -c ${SPARSE_MPI_SRC} ${SHARED_SRC}
-
-sthread_clean:
-	rm -f main.o
-
-pthread_clean:
-	rm -f main.o
-
-strassen_clean:
-	rm -f main.o
-
-dense_mpi_clean:
-	rm -f main.o
-
-sparse_mpi_clean:
-	rm -f main.o
 
 clean_objs:
 	rm -f *.o
