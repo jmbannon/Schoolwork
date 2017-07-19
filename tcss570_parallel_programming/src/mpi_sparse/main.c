@@ -126,9 +126,7 @@ int main(int argc, char **argv) {
 
 		Timer_end(&t);
 
-		SparseMatrix_print(&c);
-
-		printf("mpi_sparse,%d,%d-by-%d,%d-by-%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, Timer_dur_sec(&t));
+		printf("mpi_sparse,%d,%d-by-%d,%d-by-%d,%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, nr_procs, Timer_dur_sec(&t));
 	} else {
 		int dimensions[6];
 		MPI_Status status;
