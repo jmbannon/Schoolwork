@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
-			int dimensions[4] = { nr_rows[i], a.nr_cols, b.nr_rows, b.nr_cols };
+			int dimensions[4] = { a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols };
 			res = MPI_Isend(dimensions, 4, MPI_INT, i, 0, MPI_COMM_WORLD, &requests[i]);
 		}
 
@@ -106,7 +106,8 @@ int main(int argc, char **argv) {
 		MPI_Status status;
 
 		res = MPI_Recv(dimensions, 4, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-
+		dimensions[0] = dimensions[0] / nr_procs + (rank < dimensions[0] % nr_procs);
+		
 		res = DenseMatrix_init(&a, dimensions[0], dimensions[1]);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix A");
 

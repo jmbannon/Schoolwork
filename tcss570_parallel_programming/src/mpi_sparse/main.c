@@ -53,8 +53,8 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
-			int dimensions[6] = { nr_elems[i], a.nr_rows, a.nr_cols, b.nr_elems, b.nr_rows, b.nr_cols };
-			res = MPI_Isend(dimensions, 6, MPI_INT, i, 0, MPI_COMM_WORLD, &requests[i]);
+			int dimensions[6] = { a.nr_elems, a.nr_rows, a.nr_cols, b.nr_elems, b.nr_rows, b.nr_cols };
+			res = MPI_Isend(dimensions, 6, MPI_INT, i, 100 + i, MPI_COMM_WORLD, &requests[i]);
 		}
 
 		for (int i = 1; i < nr_procs; i++) {
@@ -141,7 +141,8 @@ int main(int argc, char **argv) {
 		int dimensions[6];
 		MPI_Status status;
 
-		res = MPI_Recv(dimensions, 6, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+		res = MPI_Recv(dimensions, 6, MPI_INT, 0, 100 + rank, MPI_COMM_WORLD, &status);
+		dimensions[0] = dimensions[0] / nr_procs + (rank < dimensions[0] % nr_procs);
 
 		res = SparseMatrix_init(&a, dimensions[1], dimensions[2], dimensions[0]);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix A");
