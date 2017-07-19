@@ -43,7 +43,7 @@ int SparseMatrix_mult(SparseMatrix *a, SparseMatrix *b, SparseMatrix *c) {
 }
 
 int SparseMatrix_merge(SparseMatrix *m, SparseMatrix *c) {
-	CHECK_ERROR_RETURN(m->nr_cols != c->nr_cols || m->nr_rows != c->nr_rows || m->size != c->size, "Invalid dimensions for matrix merge", 1);
+	CHECK_ERROR_RETURN(m->nr_cols != c->nr_cols || m->nr_rows != c->nr_rows, "Invalid dimensions for matrix merge", 1);
 
 	c->nr_elems = 0;
 	bool is_zero;
