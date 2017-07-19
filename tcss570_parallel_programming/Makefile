@@ -7,11 +7,11 @@ SPARSE_MPI_EXEC = multiply_mpi_sparse
 S_SPARSE_EXEC = multiply_s_sparse
 
 CC    = gcc
-MPI_CC = mpicc
+MPI_CC = /usr/lib64/mpich/bin/mpicc
 
-MPI_DIR = /usr/include/mpi
+MPI_DIR = /usr/include/mpich-x86_64
 
-LIBS = -g -fopenmp -lpthread -lmpi
+LIBS = -g -fopenmp -lpthread
 INCL = -I./include/iohb1.0 -L./include/iohb1.0 -I${MPI_DIR}
 FLAGS = ${LIBS} ${INCL}
 
