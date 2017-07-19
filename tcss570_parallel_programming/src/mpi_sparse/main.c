@@ -136,7 +136,6 @@ int main(int argc, char **argv) {
 		SparseMatrix_merge(&c_merge, &c);
 		Timer_end(&t);
 
-		SparseMatrix_print(&c);
 		printf("mpi_sparse,%d,%d-by-%d,%d-by-%d,%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, nr_procs, Timer_dur_sec(&t));
 	} else {
 		int dimensions[6];
