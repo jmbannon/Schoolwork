@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 		int dimensions[6];
 		MPI_Status status;
 
-		res = MPI_Recv(&dimensions, 6, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+		res = MPI_Recv(dimensions, 6, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
 
 		res = SparseMatrix_init(&a, dimensions[1], dimensions[2], dimensions[0]);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix A");

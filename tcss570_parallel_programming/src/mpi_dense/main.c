@@ -61,10 +61,10 @@ int main(int argc, char **argv) {
 		for (int i = 1; i < nr_procs; i++) {
 			#if FLOAT_NUMERIC
 				res = MPI_Isend(&a.data[IDX2RM(offset, 0, a.nr_cols)], nr_rows[i] * a.nr_cols, MPI_FLOAT, i, 0, MPI_COMM_WORLD, &requests[i]);
-				res = MPI_Isend(b.data, b.nr_rows * b.nr_cols, MPI_FLOAT, i, 1, MPI_COMM_WORLD, &requests[nr_procs + i]);
+				res = MPI_Isend(b.data,                                b.nr_rows * b.nr_cols, MPI_FLOAT, i, 1, MPI_COMM_WORLD, &requests[nr_procs + i]);
 			#else
 				res = MPI_Isend(&a.data[IDX2RM(offset, 0, a.nr_cols)], nr_rows[i] * a.nr_cols, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &requests[i]);
-				res = MPI_Isend(b.data, b.nr_rows * b.nr_cols, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &requests[nr_procs + i]);
+				res = MPI_Isend(b.data,                                b.nr_rows * b.nr_cols, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &requests[nr_procs + i]);
 			#endif
 
 			offset += nr_rows[i];
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 		int dimensions[4];
 		MPI_Status status;
 
-		res = MPI_Recv(&dimensions, 4, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+		res = MPI_Recv(dimensions, 4, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
 
 		res = DenseMatrix_init(&a, dimensions[0], dimensions[1]);
 		CHECK_ZERO_ERROR_RETURN(res, "Failed to init matrix A");
