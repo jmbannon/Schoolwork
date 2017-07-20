@@ -14,7 +14,6 @@ int main(int argc, char **argv) {
 
 	int rank;
 	int nr_procs;
-	int nr_threads = atoi(argv[3]);
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -37,7 +36,7 @@ int main(int argc, char **argv) {
 
 	#if USE_OPEN_MP
 		omp_set_dynamic(0);     		 // Explicitly disable dynamic teams
-		omp_set_num_threads(nr_threads); // Use nr_threads threads for all consecutive parallel regions
+		omp_set_num_threads(1);          // Use nr_threads threads for all consecutive parallel regions
 	#endif
 
 	if (rank == 0) {
@@ -136,7 +135,7 @@ int main(int argc, char **argv) {
 		SparseMatrix_merge(&c_merge, &c);
 		Timer_end(&t);
 
-		printf("mpi_sparse,%d,%d-by-%d,%d-by-%d,%d,%lf\n", nr_threads, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, nr_procs, Timer_dur_sec(&t));
+		printf("mpi_sparse,%d,%d-by-%d,%d-by-%d,%d,%lf\n", 1, a.nr_rows, a.nr_cols, b.nr_rows, b.nr_cols, nr_procs, Timer_dur_sec(&t));
 	} else {
 		int dimensions[6];
 		MPI_Status status;
