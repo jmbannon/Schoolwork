@@ -1,4 +1,4 @@
-CC = g++
+CC = g++ -std=c++11
 EXEC = sorting-algos
 
 all: compile_link clean
