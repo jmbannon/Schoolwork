@@ -145,7 +145,7 @@ protected:
     bool m_calc_inversions;
 
     /// the number of inversions in the array order
-    ssize_t m_inversions;
+    int m_inversions;
 
     /// access touch color
     struct Access
@@ -186,6 +186,8 @@ public:
     /// constructor
     SortArray();
 
+    SortArray(std::vector<ArrayItem> arr);
+
     /// Set pointer to delay functional
     void SetSortDelay(SortDelay* delay) { m_delay = delay; }
 
@@ -201,6 +203,9 @@ public:
     /// fill the array with one of the predefined data templates
     void FillData(unsigned int schema, size_t arraysize);
 
+    // fill the array with a single col of integers from csv
+    void LoadCSV(std::string filepath);
+
     /// return whether the array was sorted
     bool IsSorted() const { return m_is_sorted; }
 
@@ -211,8 +216,11 @@ public:
     bool CheckSorted();
 
     /// return the number of inversions in the array
-    ssize_t GetInversions() const
+    int GetInversions() const
     { return m_inversions; }
+
+    void IncrementInversions(int toAdd)
+    { if (m_calc_inversions) m_inversions += toAdd; }
 
     /// calculate the number of runs in the array
     size_t GetRuns() const;
@@ -241,6 +249,18 @@ public:
 
     // update inversion count by calculating delta linearly for a swap
     void UpdateInversions(size_t i, size_t j);
+
+    SortArray subset(float perc) {
+        size_t newSize = (size_t)(m_array.size() * perc);
+        std::vector<ArrayItem> newvec(m_array.begin(), m_array.begin() + newSize);
+
+        for (int i = 0; i < newSize; i++) {
+            newvec[i] = m_array[i];
+        }
+
+        SortArray toRet(newvec);
+        return toRet;
+    }
 
 public:
 
@@ -337,7 +357,8 @@ public:
             m_array[i] = v;
         }
 
-        RecalcInversions();
+        m_inversions += 1;
+        // RecalcInversions();
         OnAccess();
     }
 
@@ -356,7 +377,8 @@ public:
             m_access_list.push_back(j);
         }
 
-        UpdateInversions(i, j); // update inversion count
+        // UpdateInversions(i, j); // update inversion count
+        m_inversions += 1;
 
         OnAccess();
         std::swap(m_array[i], m_array[j]);

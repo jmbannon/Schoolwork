@@ -94,8 +94,7 @@ void BubbleSort(SortArray& A)
  * MergeSort
  ******************************************************************************/
 
-void Merge(SortArray& A, int lo, int mid, int hi) {
-    std::vector<ArrayItem> sorted_arr(hi - lo);
+void Merge(SortArray& A, int lo, int mid, int hi, std::vector<ArrayItem>& B) {
 
     A.mark(lo);
     A.mark(mid);
@@ -103,49 +102,50 @@ void Merge(SortArray& A, int lo, int mid, int hi) {
 
     int i = lo;
     int j = mid;
-    int idx = 0;
+    int idx = lo;
 
     while (i < mid && j < hi) {
         if (A[i] < A[j]) {
-            sorted_arr[idx++] = A[i++];
+            B[idx++] = A[i++];
         } else {
-            sorted_arr[idx++] = A[j++];
+            B[idx++] = A[j++];
         }
     }
 
     A.unmark(mid);
 
     while (i < mid) {
-        sorted_arr[idx++] = A[i++];
+        B[idx++] = A[i++];
     }
 
     while (j < hi) {
-        sorted_arr[idx++] = A[j++];
+        B[idx++] = A[j++];
     }
 
-    for (i = 0; i < sorted_arr.size(); i++) {
-        A.set(lo + i, sorted_arr[i]);
+    for (i = lo; i < hi; i++) {
+        A.set(i, B[i]);
     }
 
     A.unmark(lo);
     A.unmark(hi - 1);
 }
 
-void MergeSort(SortArray& A, int lo, int hi)
+void MergeSort(SortArray& A, int lo, int hi, std::vector<ArrayItem>& B)
 {
     if (hi - lo > 1) {
         int mid = (hi + lo) / 2;
 
-        MergeSort(A, lo, mid);
-        MergeSort(A, mid, hi);
+        MergeSort(A, lo, mid, B);
+        MergeSort(A, mid, hi, B);
 
-        Merge(A, lo, mid, hi);
+        Merge(A, lo, mid, hi, B);
     }
 }
 
 void MergeSort(SortArray& A)
 {
-    MergeSort(A, 0, A.size());
+    std::vector<ArrayItem> B(A.size());
+    MergeSort(A, 0, A.size(), B);
 }
 
 /******************************************************************************

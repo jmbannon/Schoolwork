@@ -5,19 +5,21 @@
 #include <vector>
 #include <string>
 
-std::vector<int> read_csv(std::string filepath) {
+std::vector<ArrayItem> read_csv(std::string filepath) {
 	std::ifstream f(filepath.c_str());
-	std::vector<int> values; 
+	std::vector<ArrayItem> values; 
 
 	if (f.is_open()) {
 		for (std::string line; std::getline(f, line); ) {
 			if (isdigit(line[0])) {
-				values.push_back(std::stoi(line));
+				values.push_back(ArrayItem(std::stoi(line)));
 			}
 		}
 	} else {
 		perror("Error opening file");
 	}
+
+	f.close();
 
 	return values;
 }

@@ -1,0 +1,1 @@
+algorith, percent of data used, ave runtime (ms) of 5 runs, sd of ave runtime, number of swaps/sets

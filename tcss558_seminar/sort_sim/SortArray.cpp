@@ -22,6 +22,7 @@
  ******************************************************************************/
 
 #include "SortArray.h"
+#include "fileio.h"
 
 #include <algorithm>
 
@@ -54,6 +55,15 @@ SortArray::SortArray()
     : m_calc_inversions(false),
       m_delay(NULL)
 {
+}
+
+SortArray::SortArray(std::vector<ArrayItem> arr)
+    : m_calc_inversions(false),
+      m_delay(NULL)
+{
+    ResetArray(arr.size());
+    m_array = arr;
+    FinishFill();
 }
 
 void SortArray::ResetArray(size_t size)
@@ -144,14 +154,20 @@ void SortArray::FillData(unsigned int schema, size_t arraysize)
 
         std::random_shuffle(m_array.begin(), m_array.end());
     }
-    else if (schema == 5) // shuffled n-2 equal values in [1,n]
+    else if (schema == 5) // shuffled n-8 equal values in [1,n]
     {
         m_array[0] = ArrayItem(1);
-        for (size_t i = 1; i < m_array.size()-1; ++i)
+        m_array[1] = ArrayItem(2);
+        m_array[2] = ArrayItem(3);
+        m_array[3] = ArrayItem(4);
+        for (size_t i = 4; i < m_array.size()-4; ++i)
         {
             m_array[i] = ArrayItem( arraysize / 2 + 1 );
         }
         m_array[m_array.size()-1] = ArrayItem(arraysize);
+        m_array[m_array.size()-2] = ArrayItem(arraysize-1);
+        m_array[m_array.size()-3] = ArrayItem(arraysize-2);
+        m_array[m_array.size()-4] = ArrayItem(arraysize-3);
 
         std::random_shuffle(m_array.begin(), m_array.end());
     }
@@ -161,6 +177,12 @@ void SortArray::FillData(unsigned int schema, size_t arraysize)
     }
 
     FinishFill();
+}
+
+void SortArray::LoadCSV(std::string filepath)
+{
+    m_array = read_csv(filepath);
+    m_mark.resize(m_array.size());
 }
 
 void SortArray::OnAccess()

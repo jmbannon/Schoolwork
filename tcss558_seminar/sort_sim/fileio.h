@@ -3,7 +3,8 @@
 
 #include <vector>
 #include <string>
+#include "SortArray.h"
 
-std::vector<int> read_csv(std::string filepath);
+std::vector<ArrayItem> read_csv(std::string filepath);
 
 #endif
