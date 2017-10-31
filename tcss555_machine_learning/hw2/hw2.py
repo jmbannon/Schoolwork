@@ -7,8 +7,8 @@
 import sys
 import math
 import re
-from id3 import Id3Estimator
 import pandas as pd
+from sklearn import tree as sktree
 import numpy as np
 
 class DecisionNode:
@@ -46,11 +46,10 @@ def entropy(examples, target):
     for i in range(0, len(counts)):
         frac = counts[i] / total_counts
         entropy += (frac * np.log2(frac))
+
     return entropy * -1.0
 
-def split(examples_, target, attributes_, level=0):
-    examples = examples_.copy()
-    attributes = attributes_.copy()
+def split(examples, target, attributes, level=0):
     parent_entropy = entropy(examples, target)
 
     if parent_entropy == 0:
@@ -60,8 +59,8 @@ def split(examples_, target, attributes_, level=0):
         max_idx = np.array(counts, dtype=pd.Series).argmax()
         return DecisionNode(counts.index[max_idx])
 
-    max_ig = 0
-    max_i = 0
+    min_entropy = parent_entropy
+    min_i = 0
 
     for i in range(0, len(attributes)):
         nuniques = examples[attributes[i]].value_counts()
@@ -73,29 +72,27 @@ def split(examples_, target, attributes_, level=0):
             qstr = '{}==\'{}\''.format(attributes[i], nuniques.index[j])
             child_examples = examples.query(qstr)
             child_entropies[j] = entropy(child_examples, target) * (len(child_examples) / nuniques_count)
-        
-        ig = parent_entropy - np.sum(child_entropies)
-        if ig > max_ig:
-            max_ig = ig
-            max_i = i
+            
+        child_entropy = np.sum(child_entropies)
+        if child_entropy < min_entropy:
+            min_entropy = child_entropy
+            min_i = i
 
-    if max_ig == 0:
+    if min_entropy == parent_entropy:
         counts = examples[target].value_counts()
         max_idx = np.array(counts, dtype=pd.Series).argmax()
         return DecisionNode(counts.index[max_idx])
 
     # Recurse to build tree
-    subtree_feature = attributes[max_i]
-    attributes.remove(subtree_feature)
-
+    subtree_feature = attributes[min_i]
     subtree = DecisionNode(subtree_feature)
 
     nuniques = examples[subtree_feature].value_counts()
     nuniques_arr = np.array(nuniques, dtype=pd.Series)
-    for j in range(0, len(nuniques)):
-        qstr = '{}==\'{}\''.format(subtree_feature, nuniques.index[j])
+    for split_val in nuniques.index:
+        qstr = '{}==\'{}\''.format(subtree_feature, split_val)
         child_examples = examples.query(qstr).drop(subtree_feature, 1)
-        subtree.children[nuniques.index[j]] = split(child_examples, target, attributes, level+1)
+        subtree.children[split_val] = split(examples.query(qstr), target, attributes, level+1)
 
     return subtree
 
@@ -127,11 +124,13 @@ train.columns = attributes
 test.columns = attributes
 attributes.remove(target)
 
+# print(entropy(train, target))
 tree = split(train, target, attributes)
 tree.display()
 
-# clf = Id3Estimator()
+# clf = sktree.DecisionTreeClassifier(criterion='entropy')
 # clf.fit(train.drop(target, 1).as_matrix(), train[target].as_matrix())
+# sktree.export_graphviz(clf, out_file='tree.dot') 
 # out = clf.predict(test.drop(target, 1).as_matrix())
 
 # Evaluating the tree on the test data
