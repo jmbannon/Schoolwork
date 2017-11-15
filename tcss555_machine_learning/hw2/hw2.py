@@ -1,12 +1,13 @@
 # course: TCSS555
 # Homework 2
 # date: 10/03/2017
-# name: Martine De Cock
+# name: Jesse Bannon
 # description: Training and testing decision trees with discrete-values attributes
 
 import sys
 import math
 import re
+import copy
 import pandas as pd
 from sklearn import tree as sktree
 import numpy as np
@@ -49,50 +50,72 @@ def entropy(examples, target):
 
     return entropy * -1.0
 
-def split(examples, target, attributes, level=0):
+def split(examples, target, attributes, level=0, verbose=False):
     parent_entropy = entropy(examples, target)
 
+    # If entropy is 0, mark as leaf
     if parent_entropy == 0:
         return DecisionNode(examples.iloc[0][target])
+    # If there are no remaining attributes, mark as leaf
     elif len(attributes) == 0:
         counts = examples[target].value_counts()
         max_idx = np.array(counts, dtype=pd.Series).argmax()
+
+        if verbose:
+            countsArr = np.array(counts, dtype=pd.Series)
+            print("LEAF: LEVEL {}, COUNT: {}, {}".format(level, countsArr[0], countsArr[1]))
+
         return DecisionNode(counts.index[max_idx])
 
     min_entropy = parent_entropy
     min_i = 0
 
+    # Find feature with min entropy to split on
     for i in range(0, len(attributes)):
         nuniques = examples[attributes[i]].value_counts()
         nuniques_arr = np.array(nuniques, dtype=pd.Series)
         nuniques_count = np.sum(nuniques_arr)
         child_entropies = np.zeros(len(nuniques))
         
+        # Take each class of feature, compute entropy of its split
         for j in range(0, len(nuniques)):
             qstr = '{}==\'{}\''.format(attributes[i], nuniques.index[j])
             child_examples = examples.query(qstr)
             child_entropies[j] = entropy(child_examples, target) * (len(child_examples) / nuniques_count)
             
+        # Compare weighted sum of entropies with min entropy; update min entropy variable
         child_entropy = np.sum(child_entropies)
         if child_entropy < min_entropy:
             min_entropy = child_entropy
             min_i = i
 
+    # If no information gain from splitting, mark it as leaf node
     if min_entropy == parent_entropy:
         counts = examples[target].value_counts()
         max_idx = np.array(counts, dtype=pd.Series).argmax()
         return DecisionNode(counts.index[max_idx])
 
+    if verbose:
+        counts = np.array(examples[target].value_counts(), dtype=pd.Series)
+        print("SPLIT: {}, LEVEL {}, MIN ENTROPY: {}, COUNT: {}, {}".format(min_i, level, min_entropy, counts[0], counts[1]))
+
     # Recurse to build tree
-    subtree_feature = attributes[min_i]
+    subtree_attributes = copy.deepcopy(attributes)
+    subtree_feature = subtree_attributes.pop(min_i)
     subtree = DecisionNode(subtree_feature)
 
     nuniques = examples[subtree_feature].value_counts()
     nuniques_arr = np.array(nuniques, dtype=pd.Series)
-    for split_val in nuniques.index:
+
+    # Create branch for every class of feature
+    for split_val in np.sort(nuniques.index):
         qstr = '{}==\'{}\''.format(subtree_feature, split_val)
-        child_examples = examples.query(qstr).drop(subtree_feature, 1)
-        subtree.children[split_val] = split(examples.query(qstr), target, attributes, level+1)
+
+        if verbose:
+            print(qstr)
+
+        child_examples = examples.query(qstr)
+        subtree.children[split_val] = split(examples.query(qstr), target, subtree_attributes, level+1)
 
     return subtree
 
@@ -124,19 +147,12 @@ train.columns = attributes
 test.columns = attributes
 attributes.remove(target)
 
-# print(entropy(train, target))
 tree = split(train, target, attributes)
 tree.display()
-
-# clf = sktree.DecisionTreeClassifier(criterion='entropy')
-# clf.fit(train.drop(target, 1).as_matrix(), train[target].as_matrix())
-# sktree.export_graphviz(clf, out_file='tree.dot') 
-# out = clf.predict(test.drop(target, 1).as_matrix())
 
 # Evaluating the tree on the test data
 correct = 0
 for i in range(0,len(test)):
-    # if out[i] == test.loc[i,target]:
     if str(tree.predicts(test.loc[i])) == str(test.loc[i,target]):
         correct += 1
 print("\nThe accuracy is: ", correct/len(test))
