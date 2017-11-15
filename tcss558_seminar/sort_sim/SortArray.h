@@ -29,6 +29,28 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+
+/* FOREGROUND */
+#define RST  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
+
+#define FRED(x) KRED + x + RST
+#define FGRN(x) KGRN + x + RST
+#define FYEL(x) KYEL + x + RST
+#define FBLU(x) KBLU + x + RST
+#define FMAG(x) KMAG + x + RST
+#define FCYN(x) KCYN + x + RST
+#define FWHT(x) KWHT + x + RST
+
+#define BOLD(x) "\x1B[1m" x RST
+#define UNDL(x) "\x1B[4m" x RST
 
 // ----------------------------------------------------------------------------
 
@@ -140,6 +162,8 @@ protected:
 
     /// maximum value in array for scaling display
     ArrayItem::value_type      m_array_max;
+
+    bool has_printed = false;
 
     /// disable calculating of inversions
     bool m_calc_inversions;
@@ -262,6 +286,10 @@ public:
         return toRet;
     }
 
+    void moveCursor(int row, int col);
+
+    void highlightRow();
+
 public:
 
     /// return array size
@@ -360,6 +388,62 @@ public:
         m_inversions += 1;
         // RecalcInversions();
         OnAccess();
+        UpdateConsole();
+    }
+
+    void UpdateConsole()
+    {
+        usleep(1000 * 100);
+
+        if (has_printed) {
+            for (int i = 0; i < m_array.size() + 1; i++) {
+                std::cout << "\e[A";
+            }
+        } else {
+            has_printed = true;
+        }
+
+        char *output[m_array_max];
+        for (int i = 0; i < m_array_max; i++) {
+            output[i] = (char *)malloc(m_array.size() * sizeof(char));
+        }
+
+        for (int i = 0; i < m_array.size(); i++) {
+
+            int value = m_array[i].get_direct();
+
+            int j = 0;
+            for (; j < value; j++) {
+                output[j][i] = '|';
+            }
+            for (; j < m_array_max; j++) {
+                output[j][i] = ' ';
+            }
+        }
+
+        for (int i = m_array_max - 1; i >= 0; i--) {
+            for (int j = 0; j < m_array.size(); j++) {
+                std::string s;
+                if (output[i][j] == '|') {
+                    s = "\u2588";
+                } else {
+                    s = " ";
+                }
+                switch(m_mark[j]) {
+                    case 0: std::cout << s;
+                    break;
+                    case 1: std::cout << FRED(s);
+                    break;
+                    case 2: std::cout << FYEL(s);
+                    break;
+                }
+            }
+            std::cout << std::endl;
+        }
+
+        for (int i = 0; i < m_array_max; i++) {
+            free(output[i]);
+        }
     }
 
     /// Special function to swap the value in the array, this method provides a
@@ -384,6 +468,15 @@ public:
         std::swap(m_array[i], m_array[j]);
         OnAccess();
         m_access2 = -1;
+
+        mark(i, 1);
+        mark(j, 1);
+        UpdateConsole();
+        unmark(i);
+        unmark(j);
+        UpdateConsole();
+
+        // usleep(1000 * 100);
     }
 
     /// Touch an item of the array: set color till next frame is outputted.

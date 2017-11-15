@@ -24,6 +24,7 @@
 #include "SortArray.h"
 #include "fileio.h"
 
+#include <string>
 #include <algorithm>
 
 extern void SoundAccess(size_t i) { /* Do nothing. */ }
@@ -34,6 +35,7 @@ extern void SoundAccess(size_t i) { /* Do nothing. */ }
 size_t g_compare_count = 0;
 
 size_t g_access_count = 0;
+
 
 void ArrayItem::OnAccess(const ArrayItem& a)
 {
@@ -103,7 +105,14 @@ void SortArray::FillData(unsigned int schema, size_t arraysize)
 
     ResetArray(arraysize);
 
-    if (schema == 0) // Shuffle of [1,n]
+    if (schema == -1) // Shuffle of [1,n] % 90
+    {
+        for (size_t i = 0; i < m_array.size(); ++i)
+            m_array[i] = ArrayItem((i % 90) + 1);
+
+        std::random_shuffle(m_array.begin(), m_array.end());
+    }
+    else if (schema == 0) // Shuffle of [1,n]
     {
         for (size_t i = 0; i < m_array.size(); ++i)
             m_array[i] = ArrayItem(i+1);
@@ -406,5 +415,7 @@ int SortArray::GetIndexColor(size_t idx)
 
     return clr;
 }
+
+
 
 // *****************************************************************************
