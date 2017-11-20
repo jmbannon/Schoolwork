@@ -393,10 +393,10 @@ public:
 
     void UpdateConsole()
     {
-        usleep(1000 * 100);
+        usleep(1000 * 150);
 
         if (has_printed) {
-            for (int i = 0; i < m_array.size() + 1; i++) {
+            for (int i = 0; i < m_array_max; i++) {
                 std::cout << "\e[A";
             }
         } else {
