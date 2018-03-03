@@ -43,8 +43,8 @@ class Graph(vertices: Array[Vertex]) {
       e.removeColor(firstVertex.color)                         // -- lg |V|
     })
 
-    val pq = new mutable.TreeMap[Int, mutable.TreeSet[Vertex]]()
-    pq ++= vertices                                            // |V| lg |V|
+    val tMap = new mutable.TreeMap[Int, mutable.TreeSet[Vertex]]()
+    tMap ++= vertices                                            // |V| lg |V|
       .groupBy(_.saturationDegree)                             // |V|
       .map(s => {                                              // |V|
         val (saturationDegree, vertices) = s
@@ -54,13 +54,13 @@ class Graph(vertices: Array[Vertex]) {
       })
       .filter(_._2.nonEmpty)
 
-    while (pq.nonEmpty) {                                  // |V|
-      val (maxSaturation, maxSaturationVertices) = pq.last // -- lg |V|
+    while (tMap.nonEmpty) {                                  // |V|
+      val (maxSaturation, maxSaturationVertices) = tMap.last // -- lg |V|
       val toColor = maxSaturationVertices.last             // -- lg |V|
 
       maxSaturationVertices.remove(toColor)                // -- lg |V|
       if (maxSaturationVertices.isEmpty) {
-        pq.remove(maxSaturation)                           // -- lg |V|
+        tMap.remove(maxSaturation)                           // -- lg |V|
       }
 
 
@@ -72,20 +72,20 @@ class Graph(vertices: Array[Vertex]) {
 
         // Remove edge from NestedSaturationTree if it exists
         // (i.e. not colored)
-        if (pq.contains(eOldSaturation) && pq(eOldSaturation).remove(e)) {  // -- -- lg |V|
+        if (tMap.contains(eOldSaturation) && tMap(eOldSaturation).remove(e)) {  // -- -- lg |V|
 
           // Remove old SaturationTree if it's empty
-          if (pq(eOldSaturation).isEmpty) {
-            pq.remove(eOldSaturation)                                       // -- -- lg |V|
+          if (tMap(eOldSaturation).isEmpty) {
+            tMap.remove(eOldSaturation)                                       // -- -- lg |V|
           }
 
           // Create new SaturationTree if it does not exist
-          if (!pq.contains(e.saturationDegree)) {                           // -- -- lg |V|
-            pq += ((e.saturationDegree, new mutable.TreeSet[Vertex]()))     // -- -- lg |V|
+          if (!tMap.contains(e.saturationDegree)) {                           // -- -- lg |V|
+            tMap += ((e.saturationDegree, new mutable.TreeSet[Vertex]()))     // -- -- lg |V|
           }
 
           // Add edge to new SaturationTree
-          pq(e.saturationDegree).add(e)                                     // -- -- lg |V|
+          tMap(e.saturationDegree).add(e)                                     // -- -- lg |V|
         }
       })
     }
