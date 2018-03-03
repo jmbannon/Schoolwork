@@ -1,6 +1,10 @@
 import scala.collection.mutable
 
 object Graph {
+
+  /**
+    * Initializes graph with number of vertices and edge density.
+    */
   def initialize(numVertices: Int,
                  edgeDensity: Double): Graph = {
 
@@ -13,9 +17,11 @@ object Graph {
       name += 1
     }
 
+    // Non-directed graphs are symetrical, only consider the 'upper-triangular' portion
     for (i <- vertices.indices) {
       for (j <- (i + 1) until numVertices) {
         if (r.nextDouble() < edgeDensity) {
+          // Edge must be updated for both vertices since it's non-directed
           vertices(i).edges.append(vertices(j))
           vertices(j).edges.append(vertices(i))
         }
@@ -28,7 +34,7 @@ object Graph {
 
 class Graph(vertices: Array[Vertex]) {
 
-  // Coloring algorithm with O(V lg^2|V| E)
+  // Coloring algorithm with O(V lg|V| E)
   def color(): Unit = {
 
     val firstVertex = vertices.maxBy(_.adjacencyDegree)        // |V|
@@ -38,19 +44,15 @@ class Graph(vertices: Array[Vertex]) {
     })
 
     val pq = new mutable.TreeMap[Int, mutable.TreeSet[Vertex]]()
-
-    val pqSat0 = new mutable.TreeSet[Vertex]()
-    pqSat0 ++= vertices.filter(v => v.color == 0 && v.saturationDegree == 0)
-
-    val pqSat1 = new mutable.TreeSet[Vertex]()
-    pqSat1 ++= vertices.filter(v => v.color == 0 && v.saturationDegree == 1)
-
-    if (pqSat0.nonEmpty) {
-      pq += ((0, pqSat0))
-    }
-    if (pqSat1.nonEmpty) {
-      pq += ((1, pqSat1))
-    }
+    pq ++= vertices                                            // |V| lg |V|
+      .groupBy(_.saturationDegree)                             // |V|
+      .map(s => {                                              // |V|
+        val (saturationDegree, vertices) = s
+        val saturationTree = new mutable.TreeSet[Vertex]()
+        saturationTree ++= vertices                            // |V| lg |V|
+        (saturationDegree, saturationTree)
+      })
+      .filter(_._2.nonEmpty)
 
     while (pq.nonEmpty) {                                  // |V|
       val (maxSaturation, maxSaturationVertices) = pq.last // -- lg |V|
@@ -78,17 +80,20 @@ class Graph(vertices: Array[Vertex]) {
           }
 
           // Create new SaturationTree if it does not exist
-          if (!pq.contains(e.saturationDegree)) {                            // -- -- lg |V|
-            pq += ((e.saturationDegree, new mutable.TreeSet[Vertex]()))      // -- -- lg |V|
+          if (!pq.contains(e.saturationDegree)) {                           // -- -- lg |V|
+            pq += ((e.saturationDegree, new mutable.TreeSet[Vertex]()))     // -- -- lg |V|
           }
 
           // Add edge to new SaturationTree
-          pq(e.saturationDegree).add(e)                                      // -- -- lg |V|
+          pq(e.saturationDegree).add(e)                                     // -- -- lg |V|
         }
       })
     }
   }
 
+  /**
+    * @return True if the graph is correctly colored. False otherwise.
+    */
   def verify(): Boolean = {
     !vertices
       .map(v => (v.color, v.edges.map(_.color)))
