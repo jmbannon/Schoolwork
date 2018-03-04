@@ -37,59 +37,62 @@ class Graph(vertices: Array[Vertex]) {
   // Coloring algorithm with O(V lg|V| E)
   def color(): Unit = {
 
-    val firstVertex = vertices.maxBy(_.adjacencyDegree)        // |V|
-    firstVertex.color = firstVertex.minColor                   // lg |V|
-    firstVertex.edges.foreach(e => {                           // |E|
-      e.removeColor(firstVertex.color)                         // -- lg |V|
+    val firstVertex = vertices.maxBy(_.adjacencyDegree)
+    firstVertex.color = firstVertex.minColor
+    firstVertex.edges.foreach(e => {
+      e.removeColor(firstVertex.color)
     })
 
-    val tMap = new mutable.TreeMap[Int, mutable.TreeSet[Vertex]]()
-    tMap ++= vertices                                            // |V| lg |V|
-      .groupBy(_.saturationDegree)                             // |V|
-      .map(s => {                                              // |V|
+    val tMap = new mutable.TreeMap[Int, mutable.HashSet[Vertex]]()
+
+    tMap ++= vertices
+      .groupBy(_.saturationDegree)
+      .map(s => {
         val (saturationDegree, vertices) = s
-        val saturationTree = new mutable.TreeSet[Vertex]()
-        saturationTree ++= vertices                            // |V| lg |V|
+        val saturationTree = new mutable.HashSet[Vertex]()
+        saturationTree ++= vertices
         (saturationDegree, saturationTree)
       })
       .filter(_._2.nonEmpty)
 
-    while (tMap.nonEmpty) {                                  // |V|
-      val (maxSaturation, maxSaturationVertices) = tMap.last // -- lg |V|
-      val toColor = maxSaturationVertices.last             // -- lg |V|
+    while (tMap.nonEmpty) {
+      val (maxSaturation, maxSaturationVertices) = tMap.last
+      val toColor = maxSaturationVertices.last
 
-      maxSaturationVertices.remove(toColor)                // -- lg |V|
+      maxSaturationVertices.remove(toColor)
       if (maxSaturationVertices.isEmpty) {
-        tMap.remove(maxSaturation)                           // -- lg |V|
+        tMap.remove(maxSaturation)
       }
 
 
-      toColor.color = toColor.minColor                     // -- lg |V|
+      toColor.color = toColor.minColor
 
-      toColor.edges.foreach(e => {                         // -- |E|
+      toColor.edges.foreach(e => {
         val eOldSaturation = e.saturationDegree
-        e.removeColor(toColor.color)                                        // -- -- lg |V|
+        e.removeColor(toColor.color)
 
         // Remove edge from NestedSaturationTree if it exists
         // (i.e. not colored)
-        if (tMap.contains(eOldSaturation) && tMap(eOldSaturation).remove(e)) {  // -- -- lg |V|
+        if (tMap.contains(eOldSaturation) && tMap(eOldSaturation).remove(e)) {
 
           // Remove old SaturationTree if it's empty
           if (tMap(eOldSaturation).isEmpty) {
-            tMap.remove(eOldSaturation)                                       // -- -- lg |V|
+            tMap.remove(eOldSaturation)
           }
 
           // Create new SaturationTree if it does not exist
-          if (!tMap.contains(e.saturationDegree)) {                           // -- -- lg |V|
-            tMap += ((e.saturationDegree, new mutable.TreeSet[Vertex]()))     // -- -- lg |V|
+          if (!tMap.contains(e.saturationDegree)) {
+            tMap += ((e.saturationDegree, new mutable.HashSet[Vertex]()))
           }
 
           // Add edge to new SaturationTree
-          tMap(e.saturationDegree).add(e)                                     // -- -- lg |V|
+          tMap(e.saturationDegree).add(e)
         }
       })
     }
   }
+
+  def colorCount(): Int = vertices.map(_.color).distinct.length
 
   /**
     * @return True if the graph is correctly colored. False otherwise.
